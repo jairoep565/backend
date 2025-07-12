@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express"
 import dotenv from "dotenv"
-import { listaTODOs, TODO } from "./data"
 import bodyParser from "body-parser"
 import cors from "cors"
 import { PrismaClient } from "./generated/prisma"
@@ -25,18 +24,13 @@ app.get("/", (req : Request, resp : Response) => {
     resp.send("Endpoint raiz")
 })
 
-app.get("/todos", async (req : Request, resp : Response) => {
+app.get("/noticia", async (req : Request, resp : Response) => {
     const prisma = new PrismaClient()
-
-    const estado = req.query.estado
-
-    if (estado == undefined) {
-        // No hay estado, devolvemos todos los TODOs
-        const todos = await prisma.todo.findMany()
-        resp.json(todos)
-        return
-    }
-
+    const noticias = await prisma.noticia.findMany()
+    resp.json(noticias)
+    return
+})
+/*
     // Devolvemos los TODOs filtrados por estado
     const todos = await prisma.todo.findMany({
         where : {
@@ -44,8 +38,7 @@ app.get("/todos", async (req : Request, resp : Response) => {
         }
     })
     resp.json(todos)
-})
-
+/*
 app.get("/todos/:id", (req : Request, resp : Response) => {
     const id = req.params.id
 
@@ -162,10 +155,10 @@ app.delete("/todos/:id", (req : Request, resp : Response) => {
             return
         }
         indice++
-    }*/
+    }
 
     
-})
+})*/
 
 app.listen(PORT, () => {
     console.log(`Se inicio servidor en puerto ${PORT}`)

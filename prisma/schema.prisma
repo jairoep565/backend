@@ -21,8 +21,8 @@ model Usuario {
   nombre        String
   token         String
   estado        Boolean
-  ventas        Venta[]
-  calificaciones Calificacion[]
+  ventas        Venta[]        
+  calificaciones Calificacion[] 
 }
 
 model Noticia {
@@ -39,33 +39,33 @@ model Venta {
   montoPagado  Float
   usuarioId    Int
   juegoId      Int
-  usuario      Usuario @relation(fields: [usuarioId], references: [id])
-  juego        Juego   @relation(fields: [juegoId], references: [id])
+  usuario      Usuario @relation(fields: [usuarioId], references: [id]) 
+  juego        Juego   @relation(fields: [juegoId], references: [id])   
 }
 
 model Juego {
   id           Int         @id @default(autoincrement())
   nombre       String
   precio       Float
+  estaOferta   Boolean
   estado       Boolean
   categoriaId  Int
-  plataformaId Int
-  categoria    Categoria  @relation(fields: [categoriaId], references: [id])
-  plataforma   Plataforma @relation(fields: [plataformaId], references: [id])
-  ventas       Venta[]
-  calificaciones Calificacion[]
-}
-
-model Categoria {
-  id      Int    @id @default(autoincrement())
-  nombre  String
-  juegos  Juego[]
+  plataforma   Plataforma[] @relation("JuegoPlataformas") 
+  categoria    Categoria   @relation(fields: [categoriaId], references: [id]) 
+  ventas       Venta[]     
+  calificaciones Calificacion[] 
 }
 
 model Plataforma {
   id      Int    @id @default(autoincrement())
   nombre  String
-  juegos  Juego[]
+  juegos  Juego[] @relation("JuegoPlataformas") 
+}
+
+model Categoria {
+  id      Int    @id @default(autoincrement())
+  nombre  String
+  juegos  Juego[] 
 }
 
 model Calificacion {
@@ -74,6 +74,6 @@ model Calificacion {
   comentario String
   juegoId    Int
   usuarioId  Int
-  juego      Juego   @relation(fields: [juegoId], references: [id])
-  usuario    Usuario @relation(fields: [usuarioId], references: [id])
+  juego      Juego   @relation(fields: [juegoId], references: [id]) 
+  usuario    Usuario @relation(fields: [usuarioId], references: [id]) 
 }
