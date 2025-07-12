@@ -3,8 +3,7 @@ import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { listaUsers, User } from './data'; 
-import { loginUser } from './controllers/authController';
-import { registerUser } from './controllers/registerUser';
+
 
 dotenv.config();
 
@@ -23,63 +22,157 @@ app.get("/", (req: Request, resp: Response) => {
   resp.send("Endpoint raíz");
 });
 
-// Ruta para obtener el perfil del usuario
+
+// Obtener perfil de usuario
 app.get('/api/profile', (req: Request, res: Response) => {
-  const user = listaUsers[0]; // Aquí deberías verificar al usuario autenticado
-  if (!user) {
-    return res.status(401).json({ message: 'No autorizado' });
+  const { userId } = req.query; // Usamos el userId que se pasa como query en la URL
+
+  // Si no hay un userId, devolvemos un error
+  if (!userId) {
+    return res.status(400).json({ message: 'El ID de usuario es necesario' });
   }
 
-  res.status(200).json({
+  // Buscar al usuario por su ID
+  const user = listaUsers.find(user => user.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
+
+  // Si el usuario existe, devolver los datos
+  return res.status(200).json({
     id: user.id,
     email: user.email,
+    username: user.username,
+    country: user.country,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  });
+});
+
+// Endpoint Login
+app.post('/api/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  // Buscar al usuario por el email
+  const user = listaUsers.find(user => user.email === email);
+
+  if (!user) {
+    return res.status(401).json({ message: "Usuario no encontrado" });
+  }
+
+  // Verificar que la contraseña sea correcta
+  if (user.password !== password) {
+    return res.status(401).json({ message: "Contraseña incorrecta" });
+  }
+
+  // Si el login es exitoso, respondemos con los datos del usuario
+  return res.status(200).json({
+    message: "Login exitoso",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      country: user.country,
+    },
   });
 });
 
 
-// Ruta de login
-app.post('/api/login', (req: Request, res: Response) => {
-  const { email, password } = req.body;
+//Olvidar contraseña
 
-  try {
-    const authResponse = loginUser(email, password);  // Llamamos a la función loginUser
-    res.status(200).json(authResponse); // Enviar respuesta con los datos del usuario
-  } catch (error: unknown) {
-    // Verificamos si el error es una instancia de Error
-    if (error instanceof Error) {
-      res.status(401).json({ message: error.message }); // Ahora `message` es accesible
-    } else {
-      res.status(500).json({ message: 'Error desconocido' }); // En caso de que el error no sea una instancia de `Error`
-    }
+app.post('/api/forgot-password', (req: Request, res: Response) => {
+  const { email } = req.body;  // Desestructuramos el email del cuerpo de la solicitud
+
+  // Buscar el usuario por su email
+  const user = listaUsers.find((user) => user.email === email);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });  // Si no existe el usuario
   }
+
+  // Simulamos el envío del correo para recuperación de contraseña
+  // Aquí puedes imaginar que se envía un correo de recuperación al usuario
+  return res.status(200).json({
+    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada."
+  });
 });
 
-app.post('/api/register', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+//Registro de usuario
 
-  try {
-    const newUser = await registerUser(email, password); // Llamar a la función de registro
-    res.status(201).json({
-      message: 'Usuario creado',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-      }
-    });
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      res.status(400).json({ message: error.message }); // Error si no se pudo crear el usuario
-    } else {
-      res.status(500).json({ message: 'Error desconocido' });
-    }
+app.post('/api/register', (req: Request, res: Response) => {
+  const { fullName, email, password, username, country } = req.body;
+
+  // Validar si el correo electrónico ya está registrado
+  const userExists = listaUsers.find(user => user.email === email);
+  if (userExists) {
+    return res.status(400).json({ message: "El correo electrónico ya está registrado" });
   }
+
+  // Validar si el username ya está registrado
+  const usernameExists = listaUsers.find(user => user.username === username);
+  if (usernameExists) {
+    return res.status(400).json({ message: "El nombre de usuario ya está en uso" });
+  }
+  // Crear un nuevo usuario
+  const newUser: User = {
+    id: Date.now().toString(),  // Usamos `Date.now()` para simular un ID único
+    email,
+    password,  // La contraseña aún está en texto claro (por ahora)
+    username,
+    country,
+    createdAt: new Date(),
+  };
+
+  listaUsers.push(newUser); // Guardar al usuario en la lista simulada
+
+  // Responder con los datos del nuevo usuario
+  return res.status(201).json({
+    message: 'Usuario creado exitosamente',
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      username: newUser.username,
+      country: newUser.country,
+    },
+  });
 });
 
-// Ruta para cerrar sesión
-app.post('/api/logout', (req: Request, res: Response) => {
-  // Aquí normalmente se eliminaría la sesión del usuario o se invalidaría el token
-  res.status(200).json({ message: 'Sesión cerrada' });
+//Cambiar contraseña
+
+app.put('/api/change-password', (req: Request, res: Response) => {
+  const { userId, currentPassword, newPassword } = req.body;
+
+  // Buscar al usuario por su ID
+  const user = listaUsers.find(user => user.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
+
+  // Verificar que la contraseña actual sea correcta
+  if (user.password !== currentPassword) {
+    return res.status(401).json({ message: "Contraseña actual incorrecta" });
+  }
+
+  // Cambiar la contraseña
+  user.password = newPassword;
+  user.updatedAt = new Date();  // Actualizamos la fecha de la última actualización
+
+  return res.status(200).json({
+    message: "Contraseña cambiada con éxito",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      country: user.country,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,  
+    },
+  });
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en el puerto ${PORT}`);
