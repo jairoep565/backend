@@ -1,0 +1,36 @@
+dependencias
+
+npm install
+//iniciar base da datos postgres , primero init y luego start 
+
+//ahora vemos la cadena de configuracion en .env 
+
+//pg admin es para recrear mi base de datos>bin>pgadmin4.exe
+
+//register server , 
+name: Localhost
+hostnameaddres/= localhost
+password =postgres
+
+
+//luego crear en usuarios mi uaruiio todo con superusuario
+y mi base de datos llamada todo_db}
+
+
+//luego npm run start:dev
+
+
+$ npx prisma generate //crear la carpeta primsa 
+
+
+
+
+nos damos cuenta de que no funca ya que no tengo los servicios de prisma
+$ npx prisma migrate deploy -- esto nos ayuda a migrar bases de datos que hicimos en clase
+Haces cambios en schema.prisma.
+Generas una migración con npx prisma migrate dev.
+Subes tu código y migraciones al servidor.
+Ejecutas npx prisma migrate deploy para aplicar los cambios en la base de datos del servidor.
+
+
+//generar una migracion y poder ejecutar + crear cliente 

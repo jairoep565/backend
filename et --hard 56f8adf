@@ -1,0 +1,14 @@
+[33m6792e14[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m Endpoint get login
+[33m56f8adf[m Correccion data.ts
+[33mccfd74d[m Consulta para obtener datos realizada
+[33m12b4e7d[m Comenzando a trabajar con ORM Prisma
+[33m1b4e601[m Configuracion de CORS
+[33m675369b[m backend implementado
+[33m2916fff[m Manejo de errores en endpoint de registro
+[33m727d5d3[m Endpoint para registrar TODO con sus peticiones de test
+[33md8b81bf[m TRabajando con todos dinamicos
+[33md8d1591[m Correcion de formato de md
+[33m6170847[m Documentacion de 2do endpoint
+[33m1e4d800[m Comenzando documentacion de endpoint
+[33m4ae1099[m Configurando los scripts de ejecucion
+[33m5a461e2[m Proyecto configurado
