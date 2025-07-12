@@ -1,15 +1,12 @@
-export interface TODO {
-    id : number
-    descripcion : string
+
+
+export interface User {
+  email: string;
+  password: string;
 }
 
-export const listaTODOs : TODO[] = [
-    {
-        id : 1,
-        descripcion : "dormir"
-    },
-    {
-        id : 2,
-        descripcion : "comer"
-    }
-]
+// Lista de usuarios simulados
+export const listaUsers: User[] = [
+  { email: 'usuario@ejemplo.com', password: '1234' } // Datos simulados
+  
+];
