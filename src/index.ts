@@ -1,21 +1,19 @@
 import express, { Request, Response } from "express"
 import dotenv from "dotenv"
+import { listaTODOs, TODO } from "./data"
 import bodyParser from "body-parser"
 import cors from "cors"
 import { PrismaClient } from "./generated/prisma"
 
-dotenv.config()
-const app = express()
+dotenv.config();
 
-// Configuracion del servidor HTTP para recibir peticiones
-// por el payload (cuerpo)y convertirlos en objetos js/ts
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({
-    extended : true
-}))
-app.use(cors()) // Configurando cors
+const app = express();
 
-app.use(express.static("assets"))
+// Configuración de middlewares
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.static("assets"));
 
 const PORT = process.env.PORT
 
@@ -24,13 +22,18 @@ app.get("/", (req : Request, resp : Response) => {
     resp.send("Endpoint raiz")
 })
 
-app.get("/noticia", async (req : Request, resp : Response) => {
+app.get("/todos", async (req : Request, resp : Response) => {
     const prisma = new PrismaClient()
-    const noticias = await prisma.noticia.findMany()
-    resp.json(noticias)
-    return
-})
-/*
+
+    const estado = req.query.estado
+
+    if (estado == undefined) {
+        // No hay estado, devolvemos todos los TODOs
+        const todos = await prisma.todo.findMany()
+        resp.json(todos)
+        return
+    }
+
     // Devolvemos los TODOs filtrados por estado
     const todos = await prisma.todo.findMany({
         where : {
@@ -38,7 +41,8 @@ app.get("/noticia", async (req : Request, resp : Response) => {
         }
     })
     resp.json(todos)
-/*
+})
+
 app.get("/todos/:id", (req : Request, resp : Response) => {
     const id = req.params.id
 
@@ -155,11 +159,11 @@ app.delete("/todos/:id", (req : Request, resp : Response) => {
             return
         }
         indice++
-    }
+    }*/
 
     
-})*/
+})
 
 app.listen(PORT, () => {
-    console.log(`Se inicio servidor en puerto ${PORT}`)
-})
+  console.log(`Servidor iniciado en el puerto ${PORT}`);
+});
