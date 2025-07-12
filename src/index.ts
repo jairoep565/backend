@@ -1,172 +1,86 @@
-import express, { Request, Response } from "express"
-import dotenv from "dotenv"
-import { listaTODOs, TODO } from "./data"
-import bodyParser from "body-parser"
-import cors from "cors"
-import { PrismaClient } from "./generated/prisma"
+import express, { Request, Response } from "express";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
+import cors from "cors";
+import { listaUsers, User } from './data'; 
+import { loginUser } from './controllers/authController';
+import { registerUser } from './controllers/registerUser';
 
-dotenv.config()
-const app = express()
+dotenv.config();
 
-// Configuracion del servidor HTTP para recibir peticiones
-// por el payload (cuerpo)y convertirlos en objetos js/ts
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({
-    extended : true
-}))
-app.use(cors()) // Configurando cors
+const app = express();
 
-app.use(express.static("assets"))
+// Configuración de middlewares
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
+app.use(express.static("assets"));
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000;
+
+// Ruta raíz
+app.get("/", (req: Request, resp: Response) => {
+  resp.send("Endpoint raíz");
+});
+
+// Ruta para obtener el perfil del usuario
+app.get('/api/profile', (req: Request, res: Response) => {
+  const user = listaUsers[0]; // Aquí deberías verificar al usuario autenticado
+  if (!user) {
+    return res.status(401).json({ message: 'No autorizado' });
+  }
+
+  res.status(200).json({
+    id: user.id,
+    email: user.email,
+  });
+});
 
 
-app.get("/", (req : Request, resp : Response) => {
-    resp.send("Endpoint raiz")
-})
+// Ruta de login
+app.post('/api/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-app.get("/todos", async (req : Request, resp : Response) => {
-    const prisma = new PrismaClient()
-
-    const estado = req.query.estado
-
-    if (estado == undefined) {
-        // No hay estado, devolvemos todos los TODOs
-        const todos = await prisma.todo.findMany()
-        resp.json(todos)
-        return
+  try {
+    const authResponse = loginUser(email, password);  // Llamamos a la función loginUser
+    res.status(200).json(authResponse); // Enviar respuesta con los datos del usuario
+  } catch (error: unknown) {
+    // Verificamos si el error es una instancia de Error
+    if (error instanceof Error) {
+      res.status(401).json({ message: error.message }); // Ahora `message` es accesible
+    } else {
+      res.status(500).json({ message: 'Error desconocido' }); // En caso de que el error no sea una instancia de `Error`
     }
+  }
+});
 
-    // Devolvemos los TODOs filtrados por estado
-    const todos = await prisma.todo.findMany({
-        where : {
-            estado : estado == "0" ? false : true
-        }
-    })
-    resp.json(todos)
-})
+app.post('/api/register', async (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-app.get("/todos/:id", (req : Request, resp : Response) => {
-    const id = req.params.id
-
-    let todoEncontrado : TODO | null = null
-    for (let todo of listaTODOs) {
-        if (todo.id.toString() == id) {
-            todoEncontrado = todo
-            break;
-        }
+  try {
+    const newUser = await registerUser(email, password); // Llamar a la función de registro
+    res.status(201).json({
+      message: 'Usuario creado',
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+      }
+    });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message }); // Error si no se pudo crear el usuario
+    } else {
+      res.status(500).json({ message: 'Error desconocido' });
     }
+  }
+});
 
-    if (todoEncontrado == null) {
-        // Error: no se encontro
-        resp.status(400).json({
-            msg : "Codigo incorrecto"
-        })
-    }
-
-    resp.json(todoEncontrado)
-})
-
-app.post("/todos", async (req : Request, resp : Response) => {
-    const prisma = new PrismaClient()
-    const todo = req.body
-
-    if (todo.descripcion == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar campo"
-        })
-        return
-    }
-
-    const todoCreado = await prisma.todo.create({
-        data : todo
-    })
-
-    resp.json({
-        msg : "",
-        todo : todoCreado
-    })
-})
-
-app.put("/todos/:id", (req : Request, resp : Response) => {
-    const todo = req.body
-    const todoId = req.params.id
-    const todos = listaTODOs
-
-    if (todoId == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar un id como parte del path"
-        })
-        return
-    }
-
-    if (todo.descripcion == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar un campo descripcion"
-        })
-        return
-    }
-
-    for (let t of todos)
-    {
-        if (t.id.toString() == todoId)
-        {
-            t.descripcion = todo.descripcion
-
-            resp.json({
-                msg : ""
-            })
-            return
-        }
-    }
-
-    resp.status(400).json({
-        msg : "No existe todo con ese id"
-    })
-})
-
-app.delete("/todos/:id", (req : Request, resp : Response) => {
-    const todoId = req.params.id
-    const todos = listaTODOs
-
-    const indiceAEliminar = listaTODOs.findIndex((t : TODO) => {
-        return t.id.toString() == todoId
-    })
-
-    if (indiceAEliminar == -1)
-    {
-        resp.status(400).json({
-            msg : "No existe todo con ese id"
-        })
-        return
-    }
-
-    todos.splice(indiceAEliminar, 1)
-
-    resp.json({
-        msg : ""
-    })
-
-    /*let indice = 0
-    for (let t of todos)
-    {
-        if (t.id.toString() == todoId)
-        {
-            todos.splice(indice, 1)
-            resp.json({
-                msg : ""
-            })
-            return
-        }
-        indice++
-    }*/
-
-    
-})
+// Ruta para cerrar sesión
+app.post('/api/logout', (req: Request, res: Response) => {
+  // Aquí normalmente se eliminaría la sesión del usuario o se invalidaría el token
+  res.status(200).json({ message: 'Sesión cerrada' });
+});
 
 app.listen(PORT, () => {
-    console.log(`Se inicio servidor en puerto ${PORT}`)
-})
+  console.log(`Servidor iniciado en el puerto ${PORT}`);
+});
