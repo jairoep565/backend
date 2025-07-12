@@ -1,9 +1,9 @@
-import express, { Request, Response } from "express"
-import dotenv from "dotenv"
-import { listaTODOs, TODO } from "./data"
-import bodyParser from "body-parser"
-import cors from "cors"
-import { PrismaClient } from "./generated/prisma"
+import express, { Request, Response } from "express";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
+import cors from "cors";
+import { listaUsers, User } from './data'; 
+
 
 dotenv.config();
 
@@ -15,154 +15,164 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("assets"));
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000;
+
+// Ruta raíz
+app.get("/", (req: Request, resp: Response) => {
+  resp.send("Endpoint raíz");
+});
 
 
-app.get("/", (req : Request, resp : Response) => {
-    resp.send("Endpoint raiz")
-})
+// Obtener perfil de usuario
+app.get('/api/profile', (req: Request, res: Response) => {
+  const { userId } = req.query; // Usamos el userId que se pasa como query en la URL
 
-app.get("/todos", async (req : Request, resp : Response) => {
-    const prisma = new PrismaClient()
+  // Si no hay un userId, devolvemos un error
+  if (!userId) {
+    return res.status(400).json({ message: 'El ID de usuario es necesario' });
+  }
 
-    const estado = req.query.estado
+  // Buscar al usuario por su ID
+  const user = listaUsers.find(user => user.id === userId);
 
-    if (estado == undefined) {
-        // No hay estado, devolvemos todos los TODOs
-        const todos = await prisma.todo.findMany()
-        resp.json(todos)
-        return
-    }
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
 
-    // Devolvemos los TODOs filtrados por estado
-    const todos = await prisma.todo.findMany({
-        where : {
-            estado : estado == "0" ? false : true
-        }
-    })
-    resp.json(todos)
-})
+  // Si el usuario existe, devolver los datos
+  return res.status(200).json({
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    country: user.country,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  });
+});
 
-app.get("/todos/:id", (req : Request, resp : Response) => {
-    const id = req.params.id
+// Endpoint Login
+app.post('/api/login', (req: Request, res: Response) => {
+  const { email, password } = req.body;
 
-    let todoEncontrado : TODO | null = null
-    for (let todo of listaTODOs) {
-        if (todo.id.toString() == id) {
-            todoEncontrado = todo
-            break;
-        }
-    }
+  // Buscar al usuario por el email
+  const user = listaUsers.find(user => user.email === email);
 
-    if (todoEncontrado == null) {
-        // Error: no se encontro
-        resp.status(400).json({
-            msg : "Codigo incorrecto"
-        })
-    }
+  if (!user) {
+    return res.status(401).json({ message: "Usuario no encontrado" });
+  }
 
-    resp.json(todoEncontrado)
-})
+  // Verificar que la contraseña sea correcta
+  if (user.password !== password) {
+    return res.status(401).json({ message: "Contraseña incorrecta" });
+  }
 
-app.post("/todos", async (req : Request, resp : Response) => {
-    const prisma = new PrismaClient()
-    const todo = req.body
+  // Si el login es exitoso, respondemos con los datos del usuario
+  return res.status(200).json({
+    message: "Login exitoso",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      country: user.country,
+    },
+  });
+});
 
-    if (todo.descripcion == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar campo"
-        })
-        return
-    }
 
-    const todoCreado = await prisma.todo.create({
-        data : todo
-    })
+//Olvidar contraseña
 
-    resp.json({
-        msg : "",
-        todo : todoCreado
-    })
-})
+app.post('/api/forgot-password', (req: Request, res: Response) => {
+  const { email } = req.body;  // Desestructuramos el email del cuerpo de la solicitud
 
-app.put("/todos/:id", (req : Request, resp : Response) => {
-    const todo = req.body
-    const todoId = req.params.id
-    const todos = listaTODOs
+  // Buscar el usuario por su email
+  const user = listaUsers.find((user) => user.email === email);
 
-    if (todoId == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar un id como parte del path"
-        })
-        return
-    }
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });  // Si no existe el usuario
+  }
 
-    if (todo.descripcion == undefined)
-    {
-        resp.status(400).json({
-            msg : "Debe enviar un campo descripcion"
-        })
-        return
-    }
+  // Simulamos el envío del correo para recuperación de contraseña
+  // Aquí puedes imaginar que se envía un correo de recuperación al usuario
+  return res.status(200).json({
+    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada."
+  });
+});
 
-    for (let t of todos)
-    {
-        if (t.id.toString() == todoId)
-        {
-            t.descripcion = todo.descripcion
+//Registro de usuario
 
-            resp.json({
-                msg : ""
-            })
-            return
-        }
-    }
+app.post('/api/register', (req: Request, res: Response) => {
+  const { fullName, email, password, username, country } = req.body;
 
-    resp.status(400).json({
-        msg : "No existe todo con ese id"
-    })
-})
+  // Validar si el correo electrónico ya está registrado
+  const userExists = listaUsers.find(user => user.email === email);
+  if (userExists) {
+    return res.status(400).json({ message: "El correo electrónico ya está registrado" });
+  }
 
-app.delete("/todos/:id", (req : Request, resp : Response) => {
-    const todoId = req.params.id
-    const todos = listaTODOs
+  // Validar si el username ya está registrado
+  const usernameExists = listaUsers.find(user => user.username === username);
+  if (usernameExists) {
+    return res.status(400).json({ message: "El nombre de usuario ya está en uso" });
+  }
+  // Crear un nuevo usuario
+  const newUser: User = {
+    id: Date.now().toString(),  // Usamos `Date.now()` para simular un ID único
+    email,
+    password,  // La contraseña aún está en texto claro (por ahora)
+    username,
+    country,
+    createdAt: new Date(),
+  };
 
-    const indiceAEliminar = listaTODOs.findIndex((t : TODO) => {
-        return t.id.toString() == todoId
-    })
+  listaUsers.push(newUser); // Guardar al usuario en la lista simulada
 
-    if (indiceAEliminar == -1)
-    {
-        resp.status(400).json({
-            msg : "No existe todo con ese id"
-        })
-        return
-    }
+  // Responder con los datos del nuevo usuario
+  return res.status(201).json({
+    message: 'Usuario creado exitosamente',
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      username: newUser.username,
+      country: newUser.country,
+    },
+  });
+});
 
-    todos.splice(indiceAEliminar, 1)
+//Cambiar contraseña
 
-    resp.json({
-        msg : ""
-    })
+app.put('/api/change-password', (req: Request, res: Response) => {
+  const { userId, currentPassword, newPassword } = req.body;
 
-    /*let indice = 0
-    for (let t of todos)
-    {
-        if (t.id.toString() == todoId)
-        {
-            todos.splice(indice, 1)
-            resp.json({
-                msg : ""
-            })
-            return
-        }
-        indice++
-    }*/
+  // Buscar al usuario por su ID
+  const user = listaUsers.find(user => user.id === userId);
 
-    
-})
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
+
+  // Verificar que la contraseña actual sea correcta
+  if (user.password !== currentPassword) {
+    return res.status(401).json({ message: "Contraseña actual incorrecta" });
+  }
+
+  // Cambiar la contraseña
+  user.password = newPassword;
+  user.updatedAt = new Date();  // Actualizamos la fecha de la última actualización
+
+  return res.status(200).json({
+    message: "Contraseña cambiada con éxito",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      country: user.country,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,  
+    },
+  });
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en el puerto ${PORT}`);
