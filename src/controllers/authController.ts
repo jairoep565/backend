@@ -1,4 +1,4 @@
-import { listaUsers } from '../data';  // Lista de usuarios simulados
+import { listaUsers, User } from '../data';  // Lista de usuarios simulados
 
 // Función para manejar el inicio de sesión (sin token)
 export const loginUser = (email: string, password: string) => {
