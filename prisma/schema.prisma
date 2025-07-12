@@ -14,8 +14,66 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Todo {
-  id Int @id @default(autoincrement())
-  descripcion String
-  estado Boolean
+model Usuario {
+  id            Int      @id @default(autoincrement())
+  correo        String
+  password      String
+  nombre        String
+  token         String
+  estado        Boolean
+  ventas        Venta[]
+  calificaciones Calificacion[]
+}
+
+model Noticia {
+  id      Int    @id @default(autoincrement())
+  titulo  String
+  texto   String
+  activo  Boolean
+}
+
+model Venta {
+  id           Int      @id @default(autoincrement())
+  fecha        DateTime
+  codigo       String
+  montoPagado  Float
+  usuarioId    Int
+  juegoId      Int
+  usuario      Usuario @relation(fields: [usuarioId], references: [id])
+  juego        Juego   @relation(fields: [juegoId], references: [id])
+}
+
+model Juego {
+  id           Int         @id @default(autoincrement())
+  nombre       String
+  precio       Float
+  estado       Boolean
+  categoriaId  Int
+  plataformaId Int
+  categoria    Categoria  @relation(fields: [categoriaId], references: [id])
+  plataforma   Plataforma @relation(fields: [plataformaId], references: [id])
+  ventas       Venta[]
+  calificaciones Calificacion[]
+}
+
+model Categoria {
+  id      Int    @id @default(autoincrement())
+  nombre  String
+  juegos  Juego[]
+}
+
+model Plataforma {
+  id      Int    @id @default(autoincrement())
+  nombre  String
+  juegos  Juego[]
+}
+
+model Calificacion {
+  id        Int     @id @default(autoincrement())
+  valoracion Int
+  comentario String
+  juegoId    Int
+  usuarioId  Int
+  juego      Juego   @relation(fields: [juegoId], references: [id])
+  usuario    Usuario @relation(fields: [usuarioId], references: [id])
 }
