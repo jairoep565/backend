@@ -14,66 +14,29 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  id            Int      @id @default(autoincrement())
-  correo        String
-  password      String
-  nombre        String
-  token         String
-  estado        Boolean
-  ventas        Venta[]        
-  calificaciones Calificacion[] 
+model User {
+  id        Int      @id @default(autoincrement()) 
+  email     String   @unique
+  password  String
+  username  String
+  country   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime? @updatedAt
+  games     Game[]   
 }
 
-model Noticia {
-  id      Int    @id @default(autoincrement())
-  titulo  String
-  texto   String
-  activo  Boolean
-}
-
-model Venta {
-  id           Int      @id @default(autoincrement())
-  fecha        DateTime
-  codigo       String
-  montoPagado  Float
-  usuarioId    Int
-  juegoId      Int
-  usuario      Usuario @relation(fields: [usuarioId], references: [id]) 
-  juego        Juego   @relation(fields: [juegoId], references: [id])   
-}
-
-model Juego {
-  id           Int         @id @default(autoincrement())
-  nombre       String
-  precio       Float
-  estaOferta   Boolean
-  estado       Boolean
-  categoriaId  Int
-  plataforma   Plataforma[] @relation("JuegoPlataformas") 
-  categoria    Categoria   @relation(fields: [categoriaId], references: [id]) 
-  ventas       Venta[]     
-  calificaciones Calificacion[] 
-}
-
-model Plataforma {
-  id      Int    @id @default(autoincrement())
-  nombre  String
-  juegos  Juego[] @relation("JuegoPlataformas") 
-}
-
-model Categoria {
-  id      Int    @id @default(autoincrement())
-  nombre  String
-  juegos  Juego[] 
-}
-
-model Calificacion {
-  id        Int     @id @default(autoincrement())
-  valoracion Int
-  comentario String
-  juegoId    Int
-  usuarioId  Int
-  juego      Juego   @relation(fields: [juegoId], references: [id]) 
-  usuario    Usuario @relation(fields: [usuarioId], references: [id]) 
+model Game {
+  id          Int      @id @default(autoincrement()) 
+  title       String
+  description String
+  price       Float
+  category    String
+  platform    String
+  releaseDate DateTime
+  onSale      Boolean
+  images      String[]
+  rating      Float?      
+  reviews     String[]    
+  userId      Int         
+  user        User    @relation(fields: [userId], references: [id]) 
 }
