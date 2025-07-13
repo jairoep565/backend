@@ -73,7 +73,7 @@ app.get('/api/users', (req: Request, res: Response) => {
 });
 
 // Endpoint Login
-app.post('/api/login', (req: Request, res: Response) => {
+app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
   // Buscar al usuario por el email
@@ -116,19 +116,21 @@ app.get('/api/verify-email', (req: Request, res: Response) => {
 //Olvidar contraseña
 
 app.post('/api/forgot-password', (req: Request, res: Response) => {
-  const { email } = req.body;  // Desestructuramos el email del cuerpo de la solicitud
+  const { email, password } = req.body;
 
   // Buscar el usuario por su email
   const user = listaUsers.find((user) => user.email === email);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario no encontrado" });  // Si no existe el usuario
+    return res.status(404).json({ message: "Usuario no encontrado" });
   }
 
-  // Simulamos el envío del correo para recuperación de contraseña
-  // Aquí puedes imaginar que se envía un correo de recuperación al usuario
+  // Cambiar la contraseña
+  user.password = password;  // Aquí debes actualizar la contraseña del usuario
+  user.updatedAt = new Date();
+
   return res.status(200).json({
-    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada."
+    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada.",
   });
 });
 
@@ -243,6 +245,23 @@ app.put('/api/update-profile', (req: Request, res: Response) => {
   });
 });
 
+// Verificar código de confirmación
+app.post('/api/verify-code', (req: Request, res: Response) => {
+  const { code } = req.body;
+
+  // Supón que el código válido está guardado en una variable en el servidor
+  const validCode = '123456'; // Este código debería estar guardado en alguna parte de la sesión o base de datos
+
+  // Verificamos si el código recibido es igual al código válido
+  const isValidCode = code === validCode;
+
+  if (isValidCode) {
+    return res.status(200).json({ message: 'Código verificado con éxito' });
+  } else {
+    return res.status(400).json({ message: 'Código inválido' });
+  }
+});
+
 //-------------------------------------------- JUEGOS --------------------------------------------//
 
 //Obtener todos los juegos
@@ -341,29 +360,21 @@ app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
   return res.status(200).json({ message: "Juego eliminado con éxito" });
 });
 
-// Filtrar juegos por categoría, fecha de lanzamiento y precios
+// Endpoint para filtrar juegos
 app.get('/api/admin/games/filter', (req: Request, res: Response) => {
-  const { category, releaseDate, priceRange } = req.query;
+  const { categoria, precioMin, precioMax } = req.query;
   let filteredGames = listaGames;
 
   // Filtrar por categoría
-  if (category && typeof category === 'string') {
-    filteredGames = filteredGames.filter(game => game.category === category);
-  }
-
-  // Filtrar por fecha de lanzamiento
-  if (releaseDate && typeof releaseDate === 'string') {
-    filteredGames = filteredGames.filter(game => game.releaseDate === releaseDate);
+  if (categoria && typeof categoria === 'string') {
+    filteredGames = filteredGames.filter(game => game.category === categoria);
   }
 
   // Filtrar por precio
-  if (priceRange && typeof priceRange === 'string') {
-    const [minPrice, maxPrice] = priceRange.split('-').map(Number);
-
-    // Verificamos si minPrice y maxPrice son números válidos antes de filtrar
-    if (!isNaN(minPrice) && !isNaN(maxPrice)) {
-      filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
-    }
+  if (precioMin && precioMax) {
+    const minPrice = parseFloat(precioMin as string);
+    const maxPrice = parseFloat(precioMax as string);
+    filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
   }
 
   return res.status(200).json(filteredGames);
@@ -439,9 +450,10 @@ app.put('/api/admin/news/:id', (req: Request, res: Response) => {
   });
 });
 
+
 // Eliminar una noticia
 app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;
+  const newsId = req.params.id;  // Recuperamos el ID de la noticia desde la URL
   const newsIndex = listaNews.findIndex(news => news.id === newsId);
 
   if (newsIndex === -1) {
@@ -474,14 +486,16 @@ app.post('/api/cart/:userId', (req: Request, res: Response) => {
 });
 
 // Eliminar un producto del carrito de compras
-app.delete('/api/cart/:userId/:productId', (req: Request, res: Response) => {
-  const userId = req.params.userId;
-  const productId = req.params.productId;
-
-  // Eliminar el producto del carrito
-  removeProductFromCart(userId, productId);
-
+app.delete('/api/cart/remove/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  // Eliminar el producto del carrito (implementar lógica aquí)
   return res.status(200).json({ message: "Producto eliminado del carrito" });
+});
+
+app.post('/api/cart/checkout', (req: Request, res: Response) => {
+  const { items } = req.body;
+  // Procesar el pago aquí (por ejemplo, integrar con una pasarela de pago)
+  return res.status(200).json({ message: "Pedido confirmado con éxito" });
 });
 
 // Realizar pago de los productos en el carrito
