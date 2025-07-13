@@ -2,7 +2,8 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User, listaGames, Game } from './data'; 
+import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
+import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
 
 
 dotenv.config();
@@ -22,6 +23,8 @@ app.get("/", (req: Request, resp: Response) => {
   resp.send("Endpoint raíz");
 });
 
+
+//-------------------------------------------- USUARIOS --------------------------------------------//
 
 // Obtener perfil de usuario
 app.get('/api/profile', (req: Request, res: Response) => {
@@ -240,6 +243,8 @@ app.put('/api/update-profile', (req: Request, res: Response) => {
   });
 });
 
+//-------------------------------------------- JUEGOS --------------------------------------------//
+
 //Obtener todos los juegos
 app.get('/api/games', (req: Request, res: Response) => {
     // Devolver la lista de juegos
@@ -364,8 +369,135 @@ app.get('/api/admin/games/filter', (req: Request, res: Response) => {
   return res.status(200).json(filteredGames);
 });
 
+//-------------------------------------------- NOTICIAS --------------------------------------------//
 
 
+// Obtener todas las noticias
+app.get('/api/admin/news', (req: Request, res: Response) => {
+  return res.status(200).json(listaNews);
+});
+
+// Obtener una noticia por ID
+app.get('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;
+  const news = listaNews.find(news => news.id === newsId);
+
+  if (!news) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  return res.status(200).json(news);
+});
+
+// Agregar una nueva noticia
+app.post('/api/admin/news', (req: Request, res: Response) => {
+  const { title, content } = req.body;
+
+  // Validar si el título ya existe
+  const existingNews = listaNews.find(news => news.title === title);
+  if (existingNews) {
+    return res.status(400).json({ message: "Ya existe una noticia con ese título" });
+  }
+
+  // Crear la nueva noticia
+  const newNews: News = {
+    id: Date.now().toString(),
+    title,
+    content,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  listaNews.push(newNews); // Agregarla a la lista de noticias
+
+  return res.status(201).json({
+    message: 'Noticia agregada con éxito',
+    news: newNews,
+  });
+});
+
+// Editar una noticia
+app.put('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;
+  const { title, content } = req.body;
+
+  // Buscar la noticia a editar
+  const news = listaNews.find(news => news.id === newsId);
+
+  if (!news) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  // Actualizar los campos de la noticia
+  news.title = title || news.title;
+  news.content = content || news.content;
+  news.updatedAt = new Date(); // Actualizamos la fecha de la última actualización
+
+  return res.status(200).json({
+    message: "Noticia actualizada con éxito",
+    news,
+  });
+});
+
+// Eliminar una noticia
+app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;
+  const newsIndex = listaNews.findIndex(news => news.id === newsId);
+
+  if (newsIndex === -1) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  listaNews.splice(newsIndex, 1); // Eliminar la noticia de la lista
+
+  return res.status(200).json({ message: "Noticia eliminada con éxito" });
+});
+
+//--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
+
+// Obtener carrito de compras de un usuario
+app.get('/api/cart/:userId', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const cart = getUserCart(userId); // Función para obtener el carrito del usuario
+  return res.status(200).json(cart);
+});
+
+// Agregar un producto al carrito de compras
+app.post('/api/cart/:userId', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const { productId, quantity } = req.body;
+
+  // Agregar el producto al carrito
+  addProductToCart(userId, productId, quantity); // Función para agregar al carrito
+
+  return res.status(200).json({ message: "Producto agregado al carrito" });
+});
+
+// Eliminar un producto del carrito de compras
+app.delete('/api/cart/:userId/:productId', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const productId = req.params.productId;
+
+  // Eliminar el producto del carrito
+  removeProductFromCart(userId, productId);
+
+  return res.status(200).json({ message: "Producto eliminado del carrito" });
+});
+
+// Realizar pago de los productos en el carrito
+app.post('/api/cart/:userId/checkout', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const cart = getUserCart(userId); // Obtener el carrito
+
+  // Lógica para procesar el pago (aquí solo lo simulamos)
+  const paymentSuccessful = processPayment(cart); // Función ficticia para procesar el pago
+
+  if (paymentSuccessful) {
+    return res.status(200).json({ message: "Pago realizado con éxito" });
+  } else {
+    return res.status(400).json({ message: "Error en el pago" });
+  }
+});
 
 
 

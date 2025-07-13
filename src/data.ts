@@ -50,3 +50,38 @@ export const listaGames: Game[] = [
   },
   // Otros juegos...
 ];
+
+export interface News {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const listaNews: News[] = [
+  {
+    id: '1',
+    title: 'Lanzamiento de nuevo juego',
+    content: 'Hoy se ha lanzado un nuevo juego que promete revolucionar la industria.',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  // Otras noticias...
+];
+
+
+export interface CartItem {
+  productId: string;
+  quantity: number;
+}
+
+export interface UserCart {
+  userId: string;
+  items: CartItem[];
+}
+
+export let cartList: UserCart[] = []; // Lista simulada de carritos de usuario
+
+
+
