@@ -24,23 +24,23 @@ app.get("/", (req: Request, resp: Response) => {
 
 
 // Obtener perfil de usuario
-app.get('/api/profile', (req: Request, res: Response) => {
+app.get('/api/profile', (req: Request, resp: Response) => {
   const { userId } = req.query; // Usamos el userId que se pasa como query en la URL
 
   // Si no hay un userId, devolvemos un error
   if (!userId) {
-    return res.status(400).json({ message: 'El ID de usuario es necesario' });
+    return resp.status(400).json({ message: 'El ID de usuario es necesario' });
   }
 
   // Buscar al usuario por su ID
   const user = listaUsers.find(user => user.id === userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario no encontrado" });
+    return resp.status(404).json({ message: "Usuario no encontrado" });
   }
 
   // Si el usuario existe, devolver los datos
-  return res.status(200).json({
+  return resp.status(200).json({
     id: user.id,
     email: user.email,
     username: user.username,
