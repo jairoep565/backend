@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
 import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
+import { authenticateUser, checkAuthentication, getCurrentUser, logoutUser } from './services/auth';
 
 
 dotenv.config();
@@ -27,12 +28,12 @@ app.get("/", (req: Request, resp: Response) => {
 //-------------------------------------------- USUARIOS --------------------------------------------//
 
 // Obtener perfil de usuario
-app.get('/api/profile', (req: Request, res: Response) => {
+app.get('/api/profile', (req: Request, resp: Response) => {
   const { userId } = req.query; // Usamos el userId que se pasa como query en la URL
 
   // Si no hay un userId, devolvemos un error
   if (!userId) {
-    return res.status(400).json({ message: 'El ID de usuario es necesario' });
+    return resp.status(400).json({ message: 'El ID de usuario es necesario' });
   }
 
   // Convertir userId a un número (es posible que esté en formato string)
@@ -47,11 +48,11 @@ app.get('/api/profile', (req: Request, res: Response) => {
   const user = listaUsers.find(user => user.id === userIdNumber);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario no encontrado" });
+    return resp.status(404).json({ message: "Usuario no encontrado" });
   }
 
   // Si el usuario existe, devolver los datos
-  return res.status(200).json({
+  return resp.status(200).json({
     id: user.id,
     email: user.email,
     username: user.username,
@@ -540,6 +541,41 @@ app.get('/api/stats/monthly-earnings', (req, res) => {
 
   res.status(200).json(monthlyEarnings);
 });
+
+
+/*
+/ Verificar si el usuario está autenticado
+export function verifyAuthentication(): boolean {
+  const isAuth = checkAuthentication();
+  
+  if (isAuth) {
+    const user = getCurrentUser();
+    console.log(' Usuario autenticado:', user?.username);
+    return true;
+  } else {
+    console.log(' Usuario no autenticado');
+    return false;
+  }
+}
+
+// Verificar y obtener información del usuario actual
+export function verifyUserInfo(): void {
+  if (checkAuthentication()) {
+    const user = getCurrentUser();
+    console.log('=== INFORMACIÓN DEL USUARIO ACTUAL ===');
+    console.log('ID:', user?.id);
+    console.log('Username:', user?.username);
+    console.log('Email:', user?.email);
+    console.log('País:', user?.country);
+    console.log('Creado:', user?.createdAt);
+    console.log('Actualizado:', user?.updatedAt);
+  } else {
+    console.log('❌ No hay usuario autenticado');
+  }
+}
+
+
+*/ 
 
 
 
