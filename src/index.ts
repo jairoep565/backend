@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
 import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
+import { authenticateUser, checkAuthentication, getCurrentUser, logoutUser } from './services/auth';
 
 
 dotenv.config();
@@ -521,6 +522,41 @@ app.get('/api/stats/monthly-earnings', (req, res) => {
 
   res.status(200).json(monthlyEarnings);
 });
+
+
+/*
+/ Verificar si el usuario está autenticado
+export function verifyAuthentication(): boolean {
+  const isAuth = checkAuthentication();
+  
+  if (isAuth) {
+    const user = getCurrentUser();
+    console.log(' Usuario autenticado:', user?.username);
+    return true;
+  } else {
+    console.log(' Usuario no autenticado');
+    return false;
+  }
+}
+
+// Verificar y obtener información del usuario actual
+export function verifyUserInfo(): void {
+  if (checkAuthentication()) {
+    const user = getCurrentUser();
+    console.log('=== INFORMACIÓN DEL USUARIO ACTUAL ===');
+    console.log('ID:', user?.id);
+    console.log('Username:', user?.username);
+    console.log('Email:', user?.email);
+    console.log('País:', user?.country);
+    console.log('Creado:', user?.createdAt);
+    console.log('Actualizado:', user?.updatedAt);
+  } else {
+    console.log('❌ No hay usuario autenticado');
+  }
+}
+
+
+*/ 
 
 
 
