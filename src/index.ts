@@ -2,7 +2,8 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User, listaGames, Game } from './data'; 
+import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
+import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
 
 
 dotenv.config();
@@ -22,6 +23,8 @@ app.get("/", (req: Request, resp: Response) => {
   resp.send("Endpoint raíz");
 });
 
+
+//-------------------------------------------- USUARIOS --------------------------------------------//
 
 // Obtener perfil de usuario
 app.get('/api/profile', (req: Request, resp: Response) => {
@@ -70,7 +73,7 @@ app.get('/api/users', (req: Request, res: Response) => {
 });
 
 // Endpoint Login
-app.post('/api/login', (req: Request, res: Response) => {
+app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
   // Buscar al usuario por el email
@@ -113,19 +116,21 @@ app.get('/api/verify-email', (req: Request, res: Response) => {
 //Olvidar contraseña
 
 app.post('/api/forgot-password', (req: Request, res: Response) => {
-  const { email } = req.body;  // Desestructuramos el email del cuerpo de la solicitud
+  const { email, password } = req.body;
 
   // Buscar el usuario por su email
   const user = listaUsers.find((user) => user.email === email);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario no encontrado" });  // Si no existe el usuario
+    return res.status(404).json({ message: "Usuario no encontrado" });
   }
 
-  // Simulamos el envío del correo para recuperación de contraseña
-  // Aquí puedes imaginar que se envía un correo de recuperación al usuario
+  // Cambiar la contraseña
+  user.password = password;  // Aquí debes actualizar la contraseña del usuario
+  user.updatedAt = new Date();
+
   return res.status(200).json({
-    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada."
+    message: "Correo de recuperación enviado con éxito. Revisa tu bandeja de entrada.",
   });
 });
 
@@ -240,6 +245,25 @@ app.put('/api/update-profile', (req: Request, res: Response) => {
   });
 });
 
+// Verificar código de confirmación
+app.post('/api/verify-code', (req: Request, res: Response) => {
+  const { code } = req.body;
+
+  // Supón que el código válido está guardado en una variable en el servidor
+  const validCode = '123456'; // Este código debería estar guardado en alguna parte de la sesión o base de datos
+
+  // Verificamos si el código recibido es igual al código válido
+  const isValidCode = code === validCode;
+
+  if (isValidCode) {
+    return res.status(200).json({ message: 'Código verificado con éxito' });
+  } else {
+    return res.status(400).json({ message: 'Código inválido' });
+  }
+});
+
+//-------------------------------------------- JUEGOS --------------------------------------------//
+
 //Obtener todos los juegos
 app.get('/api/games', (req: Request, res: Response) => {
     // Devolver la lista de juegos
@@ -336,36 +360,167 @@ app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
   return res.status(200).json({ message: "Juego eliminado con éxito" });
 });
 
-// Filtrar juegos por categoría, fecha de lanzamiento y precios
+// Endpoint para filtrar juegos
 app.get('/api/admin/games/filter', (req: Request, res: Response) => {
-  const { category, releaseDate, priceRange } = req.query;
+  const { categoria, precioMin, precioMax } = req.query;
   let filteredGames = listaGames;
 
   // Filtrar por categoría
-  if (category && typeof category === 'string') {
-    filteredGames = filteredGames.filter(game => game.category === category);
-  }
-
-  // Filtrar por fecha de lanzamiento
-  if (releaseDate && typeof releaseDate === 'string') {
-    filteredGames = filteredGames.filter(game => game.releaseDate === releaseDate);
+  if (categoria && typeof categoria === 'string') {
+    filteredGames = filteredGames.filter(game => game.category === categoria);
   }
 
   // Filtrar por precio
-  if (priceRange && typeof priceRange === 'string') {
-    const [minPrice, maxPrice] = priceRange.split('-').map(Number);
-
-    // Verificamos si minPrice y maxPrice son números válidos antes de filtrar
-    if (!isNaN(minPrice) && !isNaN(maxPrice)) {
-      filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
-    }
+  if (precioMin && precioMax) {
+    const minPrice = parseFloat(precioMin as string);
+    const maxPrice = parseFloat(precioMax as string);
+    filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
   }
 
   return res.status(200).json(filteredGames);
 });
 
+//-------------------------------------------- NOTICIAS --------------------------------------------//
 
 
+// Obtener todas las noticias
+app.get('/api/admin/news', (req: Request, res: Response) => {
+  return res.status(200).json(listaNews);
+});
+
+// Obtener una noticia por ID
+app.get('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;
+  const news = listaNews.find(news => news.id === newsId);
+
+  if (!news) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  return res.status(200).json(news);
+});
+
+// Agregar una nueva noticia
+app.post('/api/admin/news', (req: Request, res: Response) => {
+  const { title, content } = req.body;
+
+  // Validar si el título ya existe
+  const existingNews = listaNews.find(news => news.title === title);
+  if (existingNews) {
+    return res.status(400).json({ message: "Ya existe una noticia con ese título" });
+  }
+
+  // Crear la nueva noticia
+  const newNews: News = {
+    id: Date.now().toString(),
+    title,
+    content,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  listaNews.push(newNews); // Agregarla a la lista de noticias
+
+  return res.status(201).json({
+    message: 'Noticia agregada con éxito',
+    news: newNews,
+  });
+});
+
+// Editar una noticia
+app.put('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;
+  const { title, content } = req.body;
+
+  // Buscar la noticia a editar
+  const news = listaNews.find(news => news.id === newsId);
+
+  if (!news) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  // Actualizar los campos de la noticia
+  news.title = title || news.title;
+  news.content = content || news.content;
+  news.updatedAt = new Date(); // Actualizamos la fecha de la última actualización
+
+  return res.status(200).json({
+    message: "Noticia actualizada con éxito",
+    news,
+  });
+});
+
+
+// Eliminar una noticia
+app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
+  const newsId = req.params.id;  // Recuperamos el ID de la noticia desde la URL
+  const newsIndex = listaNews.findIndex(news => news.id === newsId);
+
+  if (newsIndex === -1) {
+    return res.status(404).json({ message: "Noticia no encontrada" });
+  }
+
+  listaNews.splice(newsIndex, 1); // Eliminar la noticia de la lista
+
+  return res.status(200).json({ message: "Noticia eliminada con éxito" });
+});
+
+//--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
+
+// Obtener carrito de compras de un usuario
+app.get('/api/cart/:userId', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const cart = getUserCart(userId); // Función para obtener el carrito del usuario
+  return res.status(200).json(cart);
+});
+
+// Agregar un producto al carrito de compras
+app.post('/api/cart/:userId', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const { productId, quantity } = req.body;
+
+  // Agregar el producto al carrito
+  addProductToCart(userId, productId, quantity); // Función para agregar al carrito
+
+  return res.status(200).json({ message: "Producto agregado al carrito" });
+});
+
+// Eliminar un producto del carrito de compras
+app.delete('/api/cart/remove/:id', (req: Request, res: Response) => {
+  const { id } = req.params;
+  // Eliminar el producto del carrito (implementar lógica aquí)
+  return res.status(200).json({ message: "Producto eliminado del carrito" });
+});
+
+app.post('/api/cart/checkout', (req: Request, res: Response) => {
+  const { items } = req.body;
+  // Procesar el pago aquí (por ejemplo, integrar con una pasarela de pago)
+  return res.status(200).json({ message: "Pedido confirmado con éxito" });
+});
+
+// Realizar pago de los productos en el carrito
+app.post('/api/cart/:userId/checkout', (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const cart = getUserCart(userId); // Obtener el carrito
+
+  // Lógica para procesar el pago (aquí solo lo simulamos)
+  const paymentSuccessful = processPayment(cart); // Función ficticia para procesar el pago
+
+  if (paymentSuccessful) {
+    return res.status(200).json({ message: "Pago realizado con éxito" });
+  } else {
+    return res.status(400).json({ message: "Error en el pago" });
+  }
+});
+
+//--------------------------------------------- ESTADISTICAS --------------------------------------------//
+
+app.get('/api/stats/monthly-earnings', (req, res) => {
+  // Ejemplo de ganancias mensuales, puedes obtenerlos de tu base de datos
+  const monthlyEarnings = [10000, 7500, 7800, 9800, 9900, 7800, 7500, 8900, 7700, 9100, 8600, 8000];
+
+  res.status(200).json(monthlyEarnings);
+});
 
 
 
