@@ -1,87 +1,20 @@
-# Documentacion Backend
+# Sistema de Autenticación - Backend
 
-## Endpoints
+## Características
+- ✅ Login con email y contraseña
+- ✅ Validación de credenciales
+- ✅ Manejo de sesiones
+- ✅ Verificación de autenticación
+- ✅ Middleware de seguridad
 
-### Obtener TODOs
+## Uso
+```typescript
+import { authenticateUser, checkAuthentication } from './services/auth';
 
-- Path : "/todos"
-- Metodo : GET
-- Input : Query Parameter("estado") = 0 o 1
-- Output
+// Iniciar sesión
+const result = await authenticateUser('usuario@ejemplo.com', '1234');
 
-``` json
-[
-    { "id" : 1, "descripcion" : "desc de todo 1" },
-    { "id" : 2, "descripcion" : "desc de todo 2" },
-]
-```
-
-### Obtener TODO
-
-- Path : "/todos"
-- Metodo : GET
-- Input : "/:id" : Id del TODO.
-- Output
-
-
-``` json
-    { "id" : 1, "descripcion" : "desc de todo 1" }
-```
-
-### Registrar TODO
-
-- Path : "/todos"
-- Metodo : POST
-- Input : 
-
-```json
-{
-    "descripcion" : "bla bla bla"
+// Verificar autenticación
+if (checkAuthentication()) {
+  console.log('Usuario autenticado');
 }
-```
-
-- Output
-
-```json
-{
-    "msg" : ""
-}
-```
-
-### Modificar TODO
-
-- Path : "/todos"
-- Metodo : PUT
-- Input : 
-
-```json
-
-Path Pameter: /todos/2
-{
-    "descripcion" : "nuevo todo"
-}
-```
-
-- Output :
-
-```json
-{
-    "msg" : ""
-}
-```
-
-### Eliminar TODO
-
-- Path : "/todos"
-- Metodo : DELETE
-- Input :
-
-Path Parameter: "/todos/2"
-
-- Output :
-
-```json
-{
-    "msg" : ""
-}
-```
