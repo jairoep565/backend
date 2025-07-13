@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User } from './data'; 
+import { listaUsers, User, listaGames, Game } from './data'; 
 
 
 dotenv.config();
@@ -50,6 +50,25 @@ app.get('/api/profile', (req: Request, res: Response) => {
   });
 });
 
+// Obtener un usuario por ID
+app.get('/api/user/:id', (req: Request, res: Response) => {
+  const userId = req.params.id;
+  const user = listaUsers.find(user => user.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
+
+  return res.status(200).json(user);
+});
+
+
+//Obtener todos los usuarios
+app.get('/api/users', (req: Request, res: Response) => {
+  // Devolver la lista de usuarios
+  return res.status(200).json(listaUsers);
+});
+
 // Endpoint Login
 app.post('/api/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -78,6 +97,18 @@ app.post('/api/login', (req: Request, res: Response) => {
   });
 });
 
+//Verificar si el email ya está registrado
+app.get('/api/verify-email', (req: Request, res: Response) => {
+  const { email } = req.query;
+
+  const userExists = listaUsers.find(user => user.email === email);
+
+  if (userExists) {
+    return res.status(400).json({ message: "El correo ya está registrado" });
+  }
+
+  return res.status(200).json({ message: "Correo disponible" });
+});
 
 //Olvidar contraseña
 
@@ -172,8 +203,174 @@ app.put('/api/change-password', (req: Request, res: Response) => {
   });
 });
 
+// Cerrar sesión
+app.post('/api/logout', (req: Request, res: Response) => {
+  // Si estuvieras usando JWT o sesiones, aquí destruirías el token o la sesión.
+  // En este caso, solo simulamos el cierre de sesión.
+  return res.status(200).json({ message: 'Sesión cerrada' });
+});
+
+// Editar perfil de usuario
+app.put('/api/update-profile', (req: Request, res: Response) => {
+  const { userId, fullName, email, username, country } = req.body;
+
+  // Buscar al usuario por su ID
+  const user = listaUsers.find(user => user.id === userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario no encontrado" });
+  }
+
+  // Actualizar los datos del usuario
+  user.email = email || user.email;
+  user.username = username || user.username;
+  user.country = country || user.country;
+  user.updatedAt = new Date();
+
+  return res.status(200).json({
+    message: "Perfil actualizado con éxito",
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      country: user.country,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  });
+});
+
+//Obtener todos los juegos
+app.get('/api/games', (req: Request, res: Response) => {
+    // Devolver la lista de juegos
+    return res.status(200).json(listaGames);
+    }
+);
+
+
+//Obtener un juego por ID
+
+app.get('/api/game/:id', (req: Request, res: Response) => {
+  const gameId = req.params.id;
+  const game = listaGames.find(game => game.id === gameId);
+
+  if (!game) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  return res.status(200).json(game);
+});
+
+
+// Agregar un nuevo juego
+app.post('/api/admin/games', (req: Request, res: Response) => {
+  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
+
+  // Validar si el juego ya existe por título
+  const existingGame = listaGames.find(game => game.title === title);
+  if (existingGame) {
+    return res.status(400).json({ message: "El juego ya existe en el catálogo" });
+  }
+
+  // Crear el nuevo juego
+  const newGame: Game = {
+    id: Date.now().toString(), // Usamos Date.now() para generar un ID único
+    title,
+    description,
+    price,
+    category,
+    platform,
+    releaseDate,
+    onSale,
+    images,
+  };
+
+  listaGames.push(newGame); // Guardamos el juego en el catálogo
+
+  return res.status(201).json({
+    message: 'Juego agregado con éxito',
+    game: newGame,
+  });
+});
+
+//Editar un juego
+
+app.put('/api/admin/games/:id', (req: Request, res: Response) => {
+  const gameId = req.params.id;
+  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
+
+  // Buscar el juego a editar
+  const game = listaGames.find(game => game.id === gameId);
+
+  if (!game) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  // Actualizar las propiedades del juego
+  game.title = title || game.title;
+  game.description = description || game.description;
+  game.price = price || game.price;
+  game.category = category || game.category;
+  game.platform = platform || game.platform;
+  game.releaseDate = releaseDate || game.releaseDate;
+  game.onSale = onSale !== undefined ? onSale : game.onSale;
+  game.images = images || game.images;
+
+  return res.status(200).json({
+    message: "Juego actualizado con éxito",
+    game,
+  });
+});
+
+// Eliminar un juego
+app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
+  const gameId = req.params.id;
+  const gameIndex = listaGames.findIndex(game => game.id === gameId);
+
+  if (gameIndex === -1) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  listaGames.splice(gameIndex, 1); // Eliminar el juego de la lista
+
+  return res.status(200).json({ message: "Juego eliminado con éxito" });
+});
+
+// Filtrar juegos por categoría, fecha de lanzamiento y precios
+app.get('/api/admin/games/filter', (req: Request, res: Response) => {
+  const { category, releaseDate, priceRange } = req.query;
+  let filteredGames = listaGames;
+
+  // Filtrar por categoría
+  if (category && typeof category === 'string') {
+    filteredGames = filteredGames.filter(game => game.category === category);
+  }
+
+  // Filtrar por fecha de lanzamiento
+  if (releaseDate && typeof releaseDate === 'string') {
+    filteredGames = filteredGames.filter(game => game.releaseDate === releaseDate);
+  }
+
+  // Filtrar por precio
+  if (priceRange && typeof priceRange === 'string') {
+    const [minPrice, maxPrice] = priceRange.split('-').map(Number);
+
+    // Verificamos si minPrice y maxPrice son números válidos antes de filtrar
+    if (!isNaN(minPrice) && !isNaN(maxPrice)) {
+      filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
+    }
+  }
+
+  return res.status(200).json(filteredGames);
+});
+
+
+
+
+
 
 
 app.listen(PORT, () => {
   console.log(`Servidor iniciado en el puerto ${PORT}`);
 });
+
