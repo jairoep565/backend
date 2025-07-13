@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("assets"));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Ruta raíz
 app.get("/", (req: Request, resp: Response) => {
@@ -35,8 +35,16 @@ app.get('/api/profile', (req: Request, res: Response) => {
     return res.status(400).json({ message: 'El ID de usuario es necesario' });
   }
 
-  // Buscar al usuario por su ID
-  const user = listaUsers.find(user => user.id === userId);
+  // Convertir userId a un número (es posible que esté en formato string)
+  const userIdNumber = parseInt(userId as string, 10);
+
+  // Verificar que userId es un número válido
+  if (isNaN(userIdNumber)) {
+    return res.status(400).json({ message: 'El ID de usuario debe ser un número válido' });
+  }
+
+  // Buscar al usuario por su ID (ahora `userIdNumber` es un número)
+  const user = listaUsers.find(user => user.id === userIdNumber);
 
   if (!user) {
     return res.status(404).json({ message: "Usuario no encontrado" });
@@ -55,7 +63,13 @@ app.get('/api/profile', (req: Request, res: Response) => {
 
 // Obtener un usuario por ID
 app.get('/api/user/:id', (req: Request, res: Response) => {
-  const userId = req.params.id;
+  const userId = parseInt(req.params.id, 10);
+
+  // Verificar que el userId sea un número válido
+  if (isNaN(userId)) {
+    return res.status(400).json({ message: "El ID debe ser un número válido" });
+  }
+
   const user = listaUsers.find(user => user.id === userId);
 
   if (!user) {
@@ -150,9 +164,14 @@ app.post('/api/register', (req: Request, res: Response) => {
   if (usernameExists) {
     return res.status(400).json({ message: "El nombre de usuario ya está en uso" });
   }
+
+  // Obtener el último ID en la lista y sumarle 1 para el nuevo ID
+  const lastUser = listaUsers[listaUsers.length - 1]; // Último usuario
+  const newId = lastUser ? lastUser.id + 1 : 1;  // Si hay usuarios, incrementa el ID, sino empieza desde 1
+
   // Crear un nuevo usuario
   const newUser: User = {
-    id: Date.now().toString(),  // Usamos `Date.now()` para simular un ID único
+    id: newId,  // Usamos `Date.now()` para simular un ID único
     email,
     password,  // La contraseña aún está en texto claro (por ahora)
     username,
