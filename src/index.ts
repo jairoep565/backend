@@ -513,6 +513,15 @@ app.post('/api/cart/:userId/checkout', (req: Request, res: Response) => {
   }
 });
 
+//--------------------------------------------- ESTADISTICAS --------------------------------------------//
+
+app.get('/api/stats/monthly-earnings', (req, res) => {
+  // Ejemplo de ganancias mensuales, puedes obtenerlos de tu base de datos
+  const monthlyEarnings = [10000, 7500, 7800, 9800, 9900, 7800, 7500, 8900, 7700, 9100, 8600, 8000];
+
+  res.status(200).json(monthlyEarnings);
+});
+
 
 
 
