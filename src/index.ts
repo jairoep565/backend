@@ -4,7 +4,7 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
 import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
-import { authenticateUser, checkAuthentication, getCurrentUser, logoutUser } from './services/auth';
+
 
 
 dotenv.config();
@@ -41,7 +41,7 @@ app.get('/api/profile', (req: Request, resp: Response) => {
 
   // Verificar que userId es un número válido
   if (isNaN(userIdNumber)) {
-    return res.status(400).json({ message: 'El ID de usuario debe ser un número válido' });
+    return resp.status(400).json({ message: 'El ID de usuario debe ser un número válido' });
   }
 
   // Buscar al usuario por su ID (ahora `userIdNumber` es un número)
@@ -295,7 +295,10 @@ app.get('/api/games', (req: Request, res: Response) => {
 //Obtener un juego por ID
 
 app.get('/api/game/:id', (req: Request, res: Response) => {
-  const gameId = req.params.id;
+  // Convertir el ID recibido de la URL en un número
+  const gameId = parseInt(req.params.id, 10);
+
+  // Buscar el juego por ID
   const game = listaGames.find(game => game.id === gameId);
 
   if (!game) {
@@ -316,9 +319,12 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
     return res.status(400).json({ message: "El juego ya existe en el catálogo" });
   }
 
+  // Generar un ID para el nuevo juego basado en el último id existente
+  const newId = listaGames.length > 0 ? Math.max(...listaGames.map(game => game.id)) + 1 : 1;
+
   // Crear el nuevo juego
   const newGame: Game = {
-    id: Date.now().toString(), // Usamos Date.now() para generar un ID único
+    id: newId, // Asignar el id generado
     title,
     description,
     price,
@@ -340,7 +346,9 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
 //Editar un juego
 
 app.put('/api/admin/games/:id', (req: Request, res: Response) => {
-  const gameId = req.params.id;
+  // Convertir el ID recibido en un número
+  const gameId = parseInt(req.params.id, 10);
+  
   const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
 
   // Buscar el juego a editar
@@ -368,14 +376,18 @@ app.put('/api/admin/games/:id', (req: Request, res: Response) => {
 
 // Eliminar un juego
 app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
-  const gameId = req.params.id;
+  // Convertir el ID recibido en un número
+  const gameId = parseInt(req.params.id, 10);
+
+  // Buscar el índice del juego por el id
   const gameIndex = listaGames.findIndex(game => game.id === gameId);
 
   if (gameIndex === -1) {
     return res.status(404).json({ message: "Juego no encontrado" });
   }
 
-  listaGames.splice(gameIndex, 1); // Eliminar el juego de la lista
+  // Eliminar el juego de la lista
+  listaGames.splice(gameIndex, 1);
 
   return res.status(200).json({ message: "Juego eliminado con éxito" });
 });
