@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
   password: string; // En un entorno real, esto debería ser un hash (ej. bcrypt)
   username: string;  // Agregar el campo de nombre de usuario
@@ -11,7 +11,7 @@ export interface User {
 // Lista de usuarios simulada
 export const listaUsers: User[] = [
   {
-    id: '1',
+    id: 1,
     email: 'usuario@ejemplo.com',
     password: '1234',  // En un entorno real, esta contraseña debe estar encriptada
     username: 'usuario1',
@@ -44,7 +44,7 @@ export const listaGames: Game[] = [
     platform: 'PS4',
     releaseDate: '2020-06-19',
     onSale: true,
-    images: ['https://example.com/cover1.jpg', 'https://example.com/screenshot1.jpg'],
+    images: ['https://image.api.playstation.com/vulcan/ap/rnd/202312/0117/315718bce7eed62e3cf3fb02d61b81ff1782d6b6cf850fa4.png', 'https://img.game8.co/3817458/dbebe39e9920367d6d8e20d6b699823e.png/show', 'https://www.youtube.com/watch?v=JdE9U9WW_HM'],
     rating: 4.5,
     reviews: ['Gran juego', 'Emocionante historia'],
   },
