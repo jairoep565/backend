@@ -69,6 +69,14 @@ export const listaNews: News[] = [
     updatedAt: new Date(),
     image: 'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2024/01/last-us-parte-ii-remastered-3261743.jpg?tf=3840x'
   },
+  {
+    id: '2',
+    title: 'Nintendo Switch recibe un nuevo título',
+    content: 'Nintendo ha anunciado el lanzamiento de un esperado juego para la Switch, disponible desde hoy.',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    image: 'https://assets.nintendo.com/image/upload/ar_16:9,c_lpad,w_1240/b_white/f_auto/q_auto/ncom/software/switch/70010000010192/f26fc9e1b11ce01369966ed9225e320a293c4eaad1329774f125e05629ffd437'
+  },
   // Otras noticias...
 ];
 
