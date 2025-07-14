@@ -59,16 +59,7 @@ export interface News {
   updatedAt: Date;
 }
 
-export const listaNews: News[] = [
-  {
-    id: '1',
-    title: 'Lanzamiento de nuevo juego',
-    content: 'Hoy se ha lanzado un nuevo juego que promete revolucionar la industria.',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  },
-  // Otras noticias...
-];
+
 
 
 export interface CartItem {

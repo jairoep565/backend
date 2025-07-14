@@ -2,9 +2,11 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
+import { listaUsers, User, listaGames, Game, News} from './data';
 import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
-import { authenticateUser, checkAuthentication, getCurrentUser, logoutUser } from './services/auth';
+import { PrismaClient } from "./generated/prisma"; 
+
+const prisma = new PrismaClient();
 
 
 dotenv.config();
@@ -17,7 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.static("assets"));
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 // Ruta raíz
 app.get("/", (req: Request, resp: Response) => {
@@ -385,50 +387,72 @@ app.get('/api/admin/games/filter', (req: Request, res: Response) => {
 
 
 // Obtener todas las noticias
-app.get('/api/admin/news', (req: Request, res: Response) => {
-  return res.status(200).json(listaNews);
+app.get('/api/admin/news', async (req: Request, res: Response) => {
+  try {
+    const allNews = await prisma.news.findMany();  // Obtiene todas las noticias
+
+    // Si no hay noticias, se devuelve un mensaje de éxito con un array vacío
+    return res.status(200).json(allNews);  // Devuelve las noticias encontradas (vacío si no hay noticias)
+  } catch (error) {
+    console.error("Error al obtener las noticias:", error);
+    return res.status(500).json({ message: "Error al obtener las noticias" });
+  }
 });
 
-// Obtener una noticia por ID
-app.get('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;
-  const news = listaNews.find(news => news.id === newsId);
+app.get('/api/admin/news/:id', async (req: Request, res: Response) => {
+  const newsId = parseInt(req.params.id);  // Convertir el `id` a número
 
-  if (!news) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
+  if (isNaN(newsId)) {
+    return res.status(400).json({ message: "ID inválido. Debe ser un número" });  // Mensaje más claro en caso de `id` inválido
   }
 
-  return res.status(200).json(news);
+  try {
+    const news = await prisma.news.findUnique({
+      where: { id: newsId },  // Buscar la noticia por ID
+    });
+
+    if (!news) {
+      return res.status(404).json({ message: "Noticia no encontrada con el ID proporcionado" });
+    }
+
+    return res.status(200).json(news);  // Devolver la noticia encontrada
+  } catch (error) {
+    console.error("Error al obtener la noticia:", error);
+    return res.status(500).json({ message: "Error al obtener la noticia" });
+  }
 });
 
 // Agregar una nueva noticia
-app.post('/api/admin/news', (req: Request, res: Response) => {
+app.post('/api/admin/news', async (req: Request, res: Response) => {
   const { title, content } = req.body;
 
-  // Validar si el título ya existe
-  const existingNews = listaNews.find(news => news.title === title);
-  if (existingNews) {
-    return res.status(400).json({ message: "Ya existe una noticia con ese título" });
+  // Limpiar el título para eliminar espacios adicionales
+  const cleanedTitle = title.trim();
+
+  try {
+    // Crear la nueva noticia sin verificar si el título ya existe
+    const newNews = await prisma.news.create({
+      data: {
+        title: cleanedTitle,  // Usar el título limpio
+        content,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    return res.status(201).json({
+      message: 'Noticia agregada con éxito',
+      news: newNews,  // Devolver la noticia recién creada
+    });
+  } catch (error) {
+    console.error("Error al agregar noticia:", error);
+    return res.status(500).json({ message: "Error al agregar noticia" });
   }
-
-  // Crear la nueva noticia
-  const newNews: News = {
-    id: Date.now().toString(),
-    title,
-    content,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  listaNews.push(newNews); // Agregarla a la lista de noticias
-
-  return res.status(201).json({
-    message: 'Noticia agregada con éxito',
-    news: newNews,
-  });
 });
 
-// Editar una noticia
+
+
+/* Editar una noticia
 app.put('/api/admin/news/:id', (req: Request, res: Response) => {
   const newsId = req.params.id;
   const { title, content } = req.body;
