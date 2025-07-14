@@ -57,6 +57,7 @@ export interface News {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  image: string;
 }
 
 export const listaNews: News[] = [
@@ -66,6 +67,7 @@ export const listaNews: News[] = [
     content: 'Hoy se ha lanzado un nuevo juego que promete revolucionar la industria.',
     createdAt: new Date(),
     updatedAt: new Date(),
+    image: 'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2024/01/last-us-parte-ii-remastered-3261743.jpg?tf=3840x'
   },
   // Otras noticias...
 ];

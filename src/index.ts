@@ -407,7 +407,6 @@ app.get('/api/admin/games/filter', (req: Request, res: Response) => {
 
 //-------------------------------------------- NOTICIAS --------------------------------------------//
 
-
 // Obtener todas las noticias
 app.get('/api/admin/news', (req: Request, res: Response) => {
   return res.status(200).json(listaNews);
@@ -427,7 +426,7 @@ app.get('/api/admin/news/:id', (req: Request, res: Response) => {
 
 // Agregar una nueva noticia
 app.post('/api/admin/news', (req: Request, res: Response) => {
-  const { title, content } = req.body;
+  const { title, content, image } = req.body;
 
   // Validar si el título ya existe
   const existingNews = listaNews.find(news => news.title === title);
@@ -435,13 +434,19 @@ app.post('/api/admin/news', (req: Request, res: Response) => {
     return res.status(400).json({ message: "Ya existe una noticia con ese título" });
   }
 
+  // Validar que la URL de la imagen no esté vacía
+  if (!image || image.trim() === "") {
+    return res.status(400).json({ message: "La noticia debe tener una imagen" });
+  }
+
   // Crear la nueva noticia
   const newNews: News = {
-    id: Date.now().toString(),
+    id: Date.now().toString(),  // Utiliza Date.now() para generar un ID único
     title,
     content,
     createdAt: new Date(),
     updatedAt: new Date(),
+    image,  // Agregar la URL de la imagen
   };
 
   listaNews.push(newNews); // Agregarla a la lista de noticias
@@ -455,7 +460,7 @@ app.post('/api/admin/news', (req: Request, res: Response) => {
 // Editar una noticia
 app.put('/api/admin/news/:id', (req: Request, res: Response) => {
   const newsId = req.params.id;
-  const { title, content } = req.body;
+  const { title, content, image } = req.body;
 
   // Buscar la noticia a editar
   const news = listaNews.find(news => news.id === newsId);
@@ -467,6 +472,9 @@ app.put('/api/admin/news/:id', (req: Request, res: Response) => {
   // Actualizar los campos de la noticia
   news.title = title || news.title;
   news.content = content || news.content;
+  if (image) {
+    news.image = image;  // Actualizar imagen si se proporciona
+  }
   news.updatedAt = new Date(); // Actualizamos la fecha de la última actualización
 
   return res.status(200).json({
@@ -474,7 +482,6 @@ app.put('/api/admin/news/:id', (req: Request, res: Response) => {
     news,
   });
 });
-
 
 // Eliminar una noticia
 app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
@@ -489,6 +496,7 @@ app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
 
   return res.status(200).json({ message: "Noticia eliminada con éxito" });
 });
+
 
 //--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
 
