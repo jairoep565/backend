@@ -305,7 +305,6 @@ app.get('/api/game/:id', (req: Request, res: Response) => {
 });
 
 
-// Agregar un nuevo juego
 app.post('/api/admin/games', (req: Request, res: Response) => {
   const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
 
@@ -315,8 +314,8 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
     return res.status(400).json({ message: "El juego ya existe en el catálogo" });
   }
 
-  // Generar un ID único para el nuevo juego
-  const newId = listaGames.length > 0 ? Math.max(...listaGames.map(game => game.id)) + 1 : 1;
+  // Generar un ID único para el nuevo juego, basado en la longitud de la lista
+  const newId = listaGames.length > 0 ? listaGames.length + 1 : 1;
 
   // Crear el nuevo juego
   const newGame: Game = {
@@ -338,6 +337,7 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
     game: newGame,
   });
 });
+
 
 
 // Editar un juego
@@ -409,12 +409,14 @@ app.get('/api/admin/games/filter', (req: Request, res: Response) => {
 
 // Obtener todas las noticias
 app.get('/api/admin/news', (req: Request, res: Response) => {
+  console.log(listaNews); // Verifica que los datos son correctos
   return res.status(200).json(listaNews);
 });
 
+
 // Obtener una noticia por ID
 app.get('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;
+  const newsId = parseInt(req.params.id);  // Convertir el id a número
   const news = listaNews.find(news => news.id === newsId);
 
   if (!news) {
@@ -424,7 +426,7 @@ app.get('/api/admin/news/:id', (req: Request, res: Response) => {
   return res.status(200).json(news);
 });
 
-// Agregar una nueva noticia
+
 app.post('/api/admin/news', (req: Request, res: Response) => {
   const { title, content, image } = req.body;
 
@@ -439,9 +441,9 @@ app.post('/api/admin/news', (req: Request, res: Response) => {
     return res.status(400).json({ message: "La noticia debe tener una imagen" });
   }
 
-  // Crear la nueva noticia
+  // Crear la nueva noticia con el id basado en el tamaño de la lista
   const newNews: News = {
-    id: Date.now().toString(),  // Utiliza Date.now() para generar un ID único
+    id: listaNews.length + 1,  // Asignamos el siguiente id basado en el tamaño actual de la lista
     title,
     content,
     createdAt: new Date(),
@@ -457,9 +459,11 @@ app.post('/api/admin/news', (req: Request, res: Response) => {
   });
 });
 
-// Editar una noticia
+
 app.put('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;
+  // Convertir el id de la URL a número
+  const newsId = parseInt(req.params.id);
+
   const { title, content, image } = req.body;
 
   // Buscar la noticia a editar
@@ -483,19 +487,24 @@ app.put('/api/admin/news/:id', (req: Request, res: Response) => {
   });
 });
 
-// Eliminar una noticia
+
 app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;  // Recuperamos el ID de la noticia desde la URL
+  // Convertir el id de la URL a número
+  const newsId = parseInt(req.params.id);
+
+  // Buscar el índice de la noticia a eliminar
   const newsIndex = listaNews.findIndex(news => news.id === newsId);
 
   if (newsIndex === -1) {
     return res.status(404).json({ message: "Noticia no encontrada" });
   }
 
-  listaNews.splice(newsIndex, 1); // Eliminar la noticia de la lista
+  // Eliminar la noticia de la lista
+  listaNews.splice(newsIndex, 1);
 
   return res.status(200).json({ message: "Noticia eliminada con éxito" });
 });
+
 
 
 //--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//

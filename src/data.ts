@@ -52,7 +52,7 @@ export const listaGames: Game[] = [
 ];
 
 export interface News {
-  id: string;
+  id: number;
   title: string;
   content: string;
   createdAt: Date;
@@ -62,7 +62,7 @@ export interface News {
 
 export const listaNews: News[] = [
   {
-    id: '1',
+    id: 1,
     title: 'Lanzamiento de nuevo juego',
     content: 'Hoy se ha lanzado un nuevo juego que promete revolucionar la industria.',
     createdAt: new Date(),
@@ -70,7 +70,7 @@ export const listaNews: News[] = [
     image: 'https://cdn.hobbyconsolas.com/sites/navi.axelspringer.es/public/media/image/2024/01/last-us-parte-ii-remastered-3261743.jpg?tf=3840x'
   },
   {
-    id: '2',
+    id: 2,
     title: 'Nintendo Switch recibe un nuevo título',
     content: 'Nintendo ha anunciado el lanzamiento de un esperado juego para la Switch, disponible desde hoy.',
     createdAt: new Date(),
