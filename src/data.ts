@@ -21,22 +21,22 @@ export const listaUsers: User[] = [
 ];
 
 export interface Game {
-  id: string; // ID único del juego
-  title: string; // Título del juego
-  description: string; // Descripción del juego
-  price: number; // Precio del juego
-  category: string; // Categoría del juego (por ejemplo, 'acción', 'aventura', etc.)
-  platform: string; // Plataforma (por ejemplo, 'PS4', 'PS5', 'Switch', 'Windows', 'MacOS')
-  releaseDate: string; // Fecha de lanzamiento del juego (puedes usar formato ISO 'YYYY-MM-DD')
-  onSale: boolean; // Indica si el juego está en oferta
-  images: string[]; // Lista de URLs de imágenes del juego (portada, capturas, etc.)
-  rating?: number; // Calificación del juego (opcional)
-  reviews?: string[]; // Reseñas de los usuarios (opcional)
+  id: number; // ID único del juego (debe ser un número)
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  platform: string;
+  releaseDate: string;
+  onSale: boolean;
+  images: string[];
+  rating?: number;
+  reviews?: string[];
 }
 
 export const listaGames: Game[] = [
   {
-    id: '1',
+    id: 1,
     title: 'The Last of Us Part II',
     description: 'Un emocionante juego de aventura y acción.',
     price: 59.99,

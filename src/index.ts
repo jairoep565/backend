@@ -284,28 +284,24 @@ app.post('/api/verify-code', (req: Request, res: Response) => {
 
 //-------------------------------------------- JUEGOS --------------------------------------------//
 
-//Obtener todos los juegos
+// Obtener todos los juegos
 app.get('/api/games', (req: Request, res: Response) => {
-    // Devolver la lista de juegos
-    return res.status(200).json(listaGames);
-    }
-);
+  // Devolver la lista de juegos
+  return res.status(200).json(listaGames);
+});
 
-
-//Obtener un juego por ID
-
+// Obtener un juego por ID
 app.get('/api/game/:id', (req: Request, res: Response) => {
-  // Convertir el ID recibido de la URL en un número
-  const gameId = parseInt(req.params.id, 10);
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
 
-  // Buscar el juego por ID
+  // Buscar el juego en la lista
   const game = listaGames.find(game => game.id === gameId);
 
   if (!game) {
     return res.status(404).json({ message: "Juego no encontrado" });
   }
 
-  return res.status(200).json(game);
+  return res.status(200).json(game); // Devuelve el juego encontrado
 });
 
 
@@ -313,18 +309,18 @@ app.get('/api/game/:id', (req: Request, res: Response) => {
 app.post('/api/admin/games', (req: Request, res: Response) => {
   const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
 
-  // Validar si el juego ya existe por título
+  // Verificar si el juego ya existe por título
   const existingGame = listaGames.find(game => game.title === title);
   if (existingGame) {
     return res.status(400).json({ message: "El juego ya existe en el catálogo" });
   }
 
-  // Generar un ID para el nuevo juego basado en el último id existente
+  // Generar un ID único para el nuevo juego
   const newId = listaGames.length > 0 ? Math.max(...listaGames.map(game => game.id)) + 1 : 1;
 
   // Crear el nuevo juego
   const newGame: Game = {
-    id: newId, // Asignar el id generado
+    id: newId, // ID generado
     title,
     description,
     price,
@@ -335,7 +331,7 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
     images,
   };
 
-  listaGames.push(newGame); // Guardamos el juego en el catálogo
+  listaGames.push(newGame); // Guardar el juego en la lista
 
   return res.status(201).json({
     message: 'Juego agregado con éxito',
@@ -343,12 +339,10 @@ app.post('/api/admin/games', (req: Request, res: Response) => {
   });
 });
 
-//Editar un juego
 
+// Editar un juego
 app.put('/api/admin/games/:id', (req: Request, res: Response) => {
-  // Convertir el ID recibido en un número
-  const gameId = parseInt(req.params.id, 10);
-  
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
   const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
 
   // Buscar el juego a editar
@@ -358,7 +352,7 @@ app.put('/api/admin/games/:id', (req: Request, res: Response) => {
     return res.status(404).json({ message: "Juego no encontrado" });
   }
 
-  // Actualizar las propiedades del juego
+  // Actualizar los datos del juego
   game.title = title || game.title;
   game.description = description || game.description;
   game.price = price || game.price;
@@ -376,18 +370,17 @@ app.put('/api/admin/games/:id', (req: Request, res: Response) => {
 
 // Eliminar un juego
 app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
-  // Convertir el ID recibido en un número
-  const gameId = parseInt(req.params.id, 10);
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
 
-  // Buscar el índice del juego por el id
+  // Buscar el índice del juego en la lista
   const gameIndex = listaGames.findIndex(game => game.id === gameId);
 
   if (gameIndex === -1) {
     return res.status(404).json({ message: "Juego no encontrado" });
   }
 
-  // Eliminar el juego de la lista
-  listaGames.splice(gameIndex, 1);
+  // Eliminar el juego
+  listaGames.splice(gameIndex, 1); // Eliminar el juego de la lista
 
   return res.status(200).json({ message: "Juego eliminado con éxito" });
 });
