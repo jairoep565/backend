@@ -15,51 +15,46 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  password  String
-  username  String
-  country   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
-  games     Game[]    
-  cart      Cart?     
+  id        Int      @id @default(autoincrement())  
+  email     String   @unique  
+  password  String   
+  username  String   
+  country   String  
+  createdAt DateTime @default(now())  
+  updatedAt DateTime? @updatedAt  
 }
+
 model Game {
-  id          String   @id @default(cuid()) 
-  title       String
-  description String
-  price       Float
-  category    String
-  platform    String
-  releaseDate DateTime
-  onSale      Boolean
-  images      String[]
-  rating      Float?   
-  reviews     String[]  
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id]) 
+  id           Int       @id @default(autoincrement())  
+  title        String
+  description  String
+  price        Float
+  category     String
+  platform     String
+  releaseDate  DateTime
+  onSale       Boolean
+  images       String[]  
+  rating       Float?    
+  reviews      Review[]  
+  discount     Float?    
 }
-model News {
-  id        Int      @id @default(autoincrement()) 
-  title     String   
-  content   String
-  createdAt DateTime @default(now()) 
-  updatedAt DateTime @updatedAt
+
+model Review {
+  id       Int      @id @default(autoincrement()) 
+  name     String
+  comment  String
+  stars    Int      
+  date     DateTime 
+  gameId   Int      
+  game     Game     @relation(fields: [gameId], references: [id])  
+}
+
+model Noticia {
+  id      Int      @id @default(autoincrement())  
+  title   String   @unique
+  content String
+  fecha   DateTime 
+  estado  String 
 }
 
 
-model Cart {
-  id        Int        @id @default(autoincrement())
-  userId    Int        @unique 
-  user      User       @relation(fields: [userId], references: [id])
-  items     CartItem[] 
-}
-
-model CartItem {
-  id        Int    @id @default(autoincrement())
-  productId String
-  quantity  Int
-  cartId    Int
-  cart      Cart   @relation(fields: [cartId], references: [id]) 
-}

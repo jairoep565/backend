@@ -4,13 +4,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import { listaUsers, User, listaGames, Game, News} from './data';
 import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
-<<<<<<< HEAD
 import { PrismaClient } from "./generated/prisma"; 
-
 const prisma = new PrismaClient();
-=======
-
->>>>>>> d9d61e7667ad25a3ba3f6492457e451e4f221336
 
 
 dotenv.config();
@@ -289,7 +284,7 @@ app.post('/api/verify-code', (req: Request, res: Response) => {
 });
 
 //-------------------------------------------- JUEGOS --------------------------------------------//
-
+/*
 //Obtener todos los juegos
 app.get('/api/games', (req: Request, res: Response) => {
     // Devolver la lista de juegos
@@ -417,16 +412,15 @@ app.get('/api/admin/games/filter', (req: Request, res: Response) => {
 
   return res.status(200).json(filteredGames);
 });
-
+*/
 //-------------------------------------------- NOTICIAS --------------------------------------------//
 
 
 // Obtener todas las noticias
 app.get('/api/admin/news', async (req: Request, res: Response) => {
   try {
-    const allNews = await prisma.news.findMany();  // Obtiene todas las noticias
+    const allNews = await prisma.noticia.findMany();  // Obtiene todas las noticias
 
-    // Si no hay noticias, se devuelve un mensaje de éxito con un array vacío
     return res.status(200).json(allNews);  // Devuelve las noticias encontradas (vacío si no hay noticias)
   } catch (error) {
     console.error("Error al obtener las noticias:", error);
@@ -434,16 +428,17 @@ app.get('/api/admin/news', async (req: Request, res: Response) => {
   }
 });
 
+
 app.get('/api/admin/news/:id', async (req: Request, res: Response) => {
   const newsId = parseInt(req.params.id);  // Convertir el `id` a número
 
   if (isNaN(newsId)) {
-    return res.status(400).json({ message: "ID inválido. Debe ser un número" });  // Mensaje más claro en caso de `id` inválido
+    return res.status(400).json({ message: "ID inválido. Debe ser un número" });
   }
 
   try {
-    const news = await prisma.news.findUnique({
-      where: { id: newsId },  // Buscar la noticia por ID
+    const news = await prisma.noticia.findUnique({
+      where: { id: newsId },
     });
 
     if (!news) {
@@ -457,6 +452,7 @@ app.get('/api/admin/news/:id', async (req: Request, res: Response) => {
   }
 });
 
+
 // Agregar una nueva noticia
 app.post('/api/admin/news', async (req: Request, res: Response) => {
   const { title, content } = req.body;
@@ -465,13 +461,21 @@ app.post('/api/admin/news', async (req: Request, res: Response) => {
   const cleanedTitle = title.trim();
 
   try {
-    // Crear la nueva noticia sin verificar si el título ya existe
-    const newNews = await prisma.news.create({
+    // Verificar si ya existe una noticia con el mismo título
+    const existing = await prisma.noticia.findFirst({
+      where: { title: cleanedTitle },
+    });
+
+    if (existing) {
+    return res.status(409).json({ message: "Ya existe una noticia con ese título" });
+}
+
+    const newNews = await prisma.noticia.create({
       data: {
         title: cleanedTitle,  // Usar el título limpio
         content,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        fecha: new Date().toISOString(),  // Ajustar fecha si es necesario
+        estado: 'activo',  // Asumiendo que el estado es "activo" al crear una noticia
       },
     });
 
@@ -486,44 +490,35 @@ app.post('/api/admin/news', async (req: Request, res: Response) => {
 });
 
 
+app.delete('/api/admin/news/:id', async (req: Request, res: Response) => {
+  const newsId = parseInt(req.params.id);  // Convertir el id de la URL a número
 
-/* Editar una noticia
-app.put('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;
-  const { title, content } = req.body;
-
-  // Buscar la noticia a editar
-  const news = listaNews.find(news => news.id === newsId);
-
-  if (!news) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
+  if (isNaN(newsId)) {
+    return res.status(400).json({ message: "ID inválido. Debe ser un número" });
   }
 
-  // Actualizar los campos de la noticia
-  news.title = title || news.title;
-  news.content = content || news.content;
-  news.updatedAt = new Date(); // Actualizamos la fecha de la última actualización
+  try {
+    const news = await prisma.noticia.findUnique({
+      where: { id: newsId },
+    });
 
-  return res.status(200).json({
-    message: "Noticia actualizada con éxito",
-    news,
-  });
+    if (!news) {
+      return res.status(404).json({ message: "Noticia no encontrada" });
+    }
+
+    // Eliminar la noticia
+    await prisma.noticia.delete({
+      where: { id: newsId },
+    });
+
+    return res.status(200).json({ message: "Noticia eliminada con éxito" });
+  } catch (error) {
+    console.error("Error al eliminar la noticia:", error);
+    return res.status(500).json({ message: "Error al eliminar la noticia" });
+  }
 });
 
 
-// Eliminar una noticia
-app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = req.params.id;  // Recuperamos el ID de la noticia desde la URL
-  const newsIndex = listaNews.findIndex(news => news.id === newsId);
-
-  if (newsIndex === -1) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
-  }
-
-  listaNews.splice(newsIndex, 1); // Eliminar la noticia de la lista
-
-  return res.status(200).json({ message: "Noticia eliminada con éxito" });
-});
 
 //--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
 
