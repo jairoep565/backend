@@ -1,42 +1,44 @@
-import { CartItem, cartList, UserCart } from "../data";
+import { CartItem, Cart, Game } from "../data";
 
-export const getUserCart = (userId: string): CartItem[] => {
-  const userCart = cartList.find(cart => cart.userId === userId);
-  return userCart ? userCart.items : [];
-};
+export let userCarts: { [userId: string]: Cart } = {};
 
-export const addProductToCart = (userId: string, productId: string, quantity: number) => {
-  const userCart = cartList.find(cart => cart.userId === userId);
+export function getUserCart(userId: string): Cart {
+  return userCarts[userId] || { userId, items: [], total: 0 };
+}
 
-  if (userCart) {
-    const existingProduct = userCart.items.find(item => item.productId === productId);
-    if (existingProduct) {
-      existingProduct.quantity += quantity; // Incrementar cantidad si el producto ya está en el carrito
-    } else {
-      userCart.items.push({ productId, quantity }); // Agregar nuevo producto si no está en el carrito
-    }
+export function addProductToCart(userId: string, game: Game, quantity: number) {
+  const cart = getUserCart(userId);
+  const existingGame = cart.items.find(item => item.game.id === game.id);
+
+  if (existingGame) {
+    // Si el juego ya está en el carrito, incrementamos la cantidad
+    existingGame.quantity += quantity;
   } else {
-    // Si no hay carrito para el usuario, crear uno nuevo
-    cartList.push({
-      userId,
-      items: [{ productId, quantity }],
+    // Si el juego no está en el carrito, lo añadimos
+    cart.items.push({
+      game,       // Almacenamos el objeto completo del juego
+      quantity    // Cantidad de este juego
     });
   }
-};
 
-export const removeProductFromCart = (userId: string, productId: string) => {
-  const userCart = cartList.find(cart => cart.userId === userId);
+  // Actualizamos el total del carrito
+  cart.total = cart.items.reduce((total, item) => total + (item.quantity * item.game.price), 0);
 
-  if (userCart) {
-    userCart.items = userCart.items.filter(item => item.productId !== productId); // Filtra el producto a eliminar
-  }
-};
+  userCarts[userId] = cart;
+}
 
-export const processPayment = (cart: CartItem[]): boolean => {
-  if (cart.length === 0) {
-    return false;
-  }
+export function removeProductFromCart(userId: string, gameId: number) {
+  const cart = getUserCart(userId);
+  cart.items = cart.items.filter(item => item.game.id !== gameId);
 
-  // Lógica de pago simulada
-  return true;
-};
+  // Actualizamos el total del carrito
+  cart.total = cart.items.reduce((total, item) => total + (item.quantity * item.game.price), 0);
+
+  userCarts[userId] = cart;
+}
+
+export function processPayment(cart: Cart): boolean {
+  // Lógica para procesar el pago, como integrar con una pasarela de pago real
+  console.log("Procesando pago para el carrito:", cart);
+  return true; // Simulación de pago exitoso
+}

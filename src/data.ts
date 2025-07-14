@@ -82,16 +82,15 @@ export const listaNews: News[] = [
 
 
 export interface CartItem {
-  productId: string;
-  quantity: number;
+  game: Game;      // Objeto Game
+  quantity: number; // Cantidad de ese juego
 }
 
-export interface UserCart {
-  userId: string;
-  items: CartItem[];
+export interface Cart {
+  userId: string;      // ID del usuario
+  items: CartItem[];   // Lista de juegos con sus cantidades
+  total: number;       // Total calculado del carrito
 }
-
-export let cartList: UserCart[] = []; // Lista simulada de carritos de usuario
 
 
 

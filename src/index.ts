@@ -2,8 +2,8 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User, listaGames, Game, listaNews, News} from './data';
-import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
+import { listaUsers, User, listaGames, Game, listaNews, News } from './data';
+import { getUserCart, addProductToCart, removeProductFromCart, processPayment, userCarts } from './controllers/cartController';
 
 
 
@@ -519,36 +519,34 @@ app.get('/api/cart/:userId', (req: Request, res: Response) => {
 // Agregar un producto al carrito de compras
 app.post('/api/cart/:userId', (req: Request, res: Response) => {
   const userId = req.params.userId;
-  const { productId, quantity } = req.body;
+  const { game, quantity } = req.body;  // Asumimos que 'game' es el objeto completo de Game
 
-  // Agregar el producto al carrito
-  addProductToCart(userId, productId, quantity); // Función para agregar al carrito
+  // Agregar el juego al carrito
+  addProductToCart(userId, game, quantity);
 
   return res.status(200).json({ message: "Producto agregado al carrito" });
 });
 
 // Eliminar un producto del carrito de compras
-app.delete('/api/cart/remove/:id', (req: Request, res: Response) => {
-  const { id } = req.params;
-  // Eliminar el producto del carrito (implementar lógica aquí)
+app.delete('/api/cart/remove/:userId/:gameId', (req: Request, res: Response) => {
+  const { userId, gameId } = req.params;
+
+  // Eliminar el producto del carrito
+  removeProductFromCart(userId, parseInt(gameId));
+
   return res.status(200).json({ message: "Producto eliminado del carrito" });
 });
 
-app.post('/api/cart/checkout', (req: Request, res: Response) => {
-  const { items } = req.body;
-  // Procesar el pago aquí (por ejemplo, integrar con una pasarela de pago)
-  return res.status(200).json({ message: "Pedido confirmado con éxito" });
-});
-
-// Realizar pago de los productos en el carrito
 app.post('/api/cart/:userId/checkout', (req: Request, res: Response) => {
   const userId = req.params.userId;
-  const cart = getUserCart(userId); // Obtener el carrito
+  const cart = getUserCart(userId);
 
-  // Lógica para procesar el pago (aquí solo lo simulamos)
-  const paymentSuccessful = processPayment(cart); // Función ficticia para procesar el pago
+  // Procesar el pago
+  const paymentSuccessful = processPayment(cart);
 
   if (paymentSuccessful) {
+    // Vaciamos el carrito después del pago
+    userCarts[userId] = { userId, items: [], total: 0 };
     return res.status(200).json({ message: "Pago realizado con éxito" });
   } else {
     return res.status(400).json({ message: "Error en el pago" });
