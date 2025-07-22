@@ -2,9 +2,10 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import bodyParser from "body-parser";
 import cors from "cors";
-import { listaUsers, User, listaGames, Game, listaNews, News } from './data';
-import { getUserCart, addProductToCart, removeProductFromCart, processPayment, userCarts } from './controllers/cartController';
-
+import { listaUsers, User, listaGames, listaNews, Game, News} from './data';
+import { getUserCart, addProductToCart, removeProductFromCart, processPayment } from './controllers/cartController';
+import { PrismaClient } from "./generated/prisma"; 
+const prisma = new PrismaClient();
 
 
 dotenv.config();
@@ -284,226 +285,118 @@ app.post('/api/verify-code', (req: Request, res: Response) => {
 
 //-------------------------------------------- JUEGOS --------------------------------------------//
 
-// Obtener todos los juegos
-app.get('/api/games', (req: Request, res: Response) => {
-  // Devolver la lista de juegos
-  return res.status(200).json(listaGames);
-});
-
-// Obtener un juego por ID
-app.get('/api/game/:id', (req: Request, res: Response) => {
-  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
-
-  // Buscar el juego en la lista
-  const game = listaGames.find(game => game.id === gameId);
-
-  if (!game) {
-    return res.status(404).json({ message: "Juego no encontrado" });
-  }
-
-  return res.status(200).json(game); // Devuelve el juego encontrado
-});
-
-
-app.post('/api/admin/games', (req: Request, res: Response) => {
-  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
-
-  // Verificar si el juego ya existe por título
-  const existingGame = listaGames.find(game => game.title === title);
-  if (existingGame) {
-    return res.status(400).json({ message: "El juego ya existe en el catálogo" });
-  }
-
-  // Generar un ID único para el nuevo juego, basado en la longitud de la lista
-  const newId = listaGames.length > 0 ? listaGames.length + 1 : 1;
-
-  // Crear el nuevo juego
-  const newGame: Game = {
-    id: newId, // ID generado
-    title,
-    description,
-    price,
-    category,
-    platform,
-    releaseDate,
-    onSale,
-    images,
-  };
-
-  listaGames.push(newGame); // Guardar el juego en la lista
-
-  return res.status(201).json({
-    message: 'Juego agregado con éxito',
-    game: newGame,
-  });
-});
-
-
-
-// Editar un juego
-app.put('/api/admin/games/:id', (req: Request, res: Response) => {
-  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
-  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
-
-  // Buscar el juego a editar
-  const game = listaGames.find(game => game.id === gameId);
-
-  if (!game) {
-    return res.status(404).json({ message: "Juego no encontrado" });
-  }
-
-  // Actualizar los datos del juego
-  game.title = title || game.title;
-  game.description = description || game.description;
-  game.price = price || game.price;
-  game.category = category || game.category;
-  game.platform = platform || game.platform;
-  game.releaseDate = releaseDate || game.releaseDate;
-  game.onSale = onSale !== undefined ? onSale : game.onSale;
-  game.images = images || game.images;
-
-  return res.status(200).json({
-    message: "Juego actualizado con éxito",
-    game,
-  });
-});
-
-// Eliminar un juego
-app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
-  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
-
-  // Buscar el índice del juego en la lista
-  const gameIndex = listaGames.findIndex(game => game.id === gameId);
-
-  if (gameIndex === -1) {
-    return res.status(404).json({ message: "Juego no encontrado" });
-  }
-
-  // Eliminar el juego
-  listaGames.splice(gameIndex, 1); // Eliminar el juego de la lista
-
-  return res.status(200).json({ message: "Juego eliminado con éxito" });
-});
-
-// Endpoint para filtrar juegos
-app.get('/api/admin/games/filter', (req: Request, res: Response) => {
-  const { categoria, precioMin, precioMax } = req.query;
-  let filteredGames = listaGames;
-
-  // Filtrar por categoría
-  if (categoria && typeof categoria === 'string') {
-    filteredGames = filteredGames.filter(game => game.category === categoria);
-  }
-
-  // Filtrar por precio
-  if (precioMin && precioMax) {
-    const minPrice = parseFloat(precioMin as string);
-    const maxPrice = parseFloat(precioMax as string);
-    filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
-  }
-
-  return res.status(200).json(filteredGames);
-});
-
-//-------------------------------------------- NOTICIAS --------------------------------------------//
-
 // Obtener todas las noticias
-app.get('/api/admin/news', (req: Request, res: Response) => {
-  console.log(listaNews); // Verifica que los datos son correctos
-  return res.status(200).json(listaNews);
+app.get('/api/admin/news', async (req: Request, res: Response) => {
+  try {
+    const newsList = await prisma.noticia.findMany();
+    return res.status(200).json(newsList);
+  } catch (error) {
+    console.error("Error al obtener noticias:", error);
+    return res.status(500).json({ message: "Error al obtener noticias" });
+  }
 });
-
 
 // Obtener una noticia por ID
-app.get('/api/admin/news/:id', (req: Request, res: Response) => {
-  const newsId = parseInt(req.params.id);  // Convertir el id a número
-  const news = listaNews.find(news => news.id === newsId);
+app.get('/api/admin/news/:id', async (req: Request, res: Response) => {
+  const newsId = parseInt(req.params.id);
 
-  if (!news) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
+  if (isNaN(newsId)) {
+    return res.status(400).json({ message: "ID inválido. Debe ser un número" });
   }
 
-  return res.status(200).json(news);
+  try {
+    const news = await prisma.noticia.findUnique({
+      where: { id: newsId },
+    });
+
+    if (!news) {
+      return res.status(404).json({ message: "Noticia no encontrada" });
+    }
+
+    return res.status(200).json(news);
+  } catch (error) {
+    console.error("Error al obtener la noticia:", error);
+    return res.status(500).json({ message: "Error al obtener la noticia" });
+  }
 });
 
-
-app.post('/api/admin/news', (req: Request, res: Response) => {
+// Crear noticia
+app.post('/api/admin/news', async (req: Request, res: Response) => {
   const { title, content, image } = req.body;
 
-  // Validar si el título ya existe
-  const existingNews = listaNews.find(news => news.title === title);
-  if (existingNews) {
-    return res.status(400).json({ message: "Ya existe una noticia con ese título" });
-  }
-
-  // Validar que la URL de la imagen no esté vacía
   if (!image || image.trim() === "") {
     return res.status(400).json({ message: "La noticia debe tener una imagen" });
   }
 
-  // Crear la nueva noticia con el id basado en el tamaño de la lista
-  const newNews: News = {
-    id: listaNews.length + 1,  // Asignamos el siguiente id basado en el tamaño actual de la lista
-    title,
-    content,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    image,  // Agregar la URL de la imagen
-  };
+  try {
+    const existing = await prisma.noticia.findFirst({
+      where: { title: title.trim() },
+    });
 
-  listaNews.push(newNews); // Agregarla a la lista de noticias
+    if (existing) {
+      return res.status(409).json({ message: "Ya existe una noticia con ese título" });
+    }
 
-  return res.status(201).json({
-    message: 'Noticia agregada con éxito',
-    news: newNews,
-  });
+    const newNews = await prisma.noticia.create({
+      data: {
+        title: title.trim(),
+        content,
+        fecha: new Date().toISOString(),
+        estado: 'activo',
+        image,
+      },
+    });
+
+    return res.status(201).json({ message: "Noticia agregada con éxito", news: newNews });
+  } catch (error) {
+    console.error("Error al agregar noticia:", error);
+    return res.status(500).json({ message: "Error al agregar noticia" });
+  }
 });
 
-
-app.put('/api/admin/news/:id', (req: Request, res: Response) => {
-  // Convertir el id de la URL a número
+// Actualizar noticia
+app.put('/api/admin/news/:id', async (req: Request, res: Response) => {
   const newsId = parseInt(req.params.id);
-
   const { title, content, image } = req.body;
 
-  // Buscar la noticia a editar
-  const news = listaNews.find(news => news.id === newsId);
+  try {
+    const updated = await prisma.noticia.update({
+      where: { id: newsId },
+      data: {
+        title,
+        content,
+        image,
+        updatedAt: new Date(),
+      },
+    });
 
-  if (!news) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
+    return res.status(200).json({ message: "Noticia actualizada con éxito", news: updated });
+  } catch (error) {
+    console.error("Error al actualizar la noticia:", error);
+    return res.status(500).json({ message: "Error al actualizar la noticia" });
   }
-
-  // Actualizar los campos de la noticia
-  news.title = title || news.title;
-  news.content = content || news.content;
-  if (image) {
-    news.image = image;  // Actualizar imagen si se proporciona
-  }
-  news.updatedAt = new Date(); // Actualizamos la fecha de la última actualización
-
-  return res.status(200).json({
-    message: "Noticia actualizada con éxito",
-    news,
-  });
 });
 
-
-app.delete('/api/admin/news/:id', (req: Request, res: Response) => {
-  // Convertir el id de la URL a número
+// Eliminar noticia
+app.delete('/api/admin/news/:id', async (req: Request, res: Response) => {
   const newsId = parseInt(req.params.id);
 
-  // Buscar el índice de la noticia a eliminar
-  const newsIndex = listaNews.findIndex(news => news.id === newsId);
-
-  if (newsIndex === -1) {
-    return res.status(404).json({ message: "Noticia no encontrada" });
+  if (isNaN(newsId)) {
+    return res.status(400).json({ message: "ID inválido. Debe ser un número" });
   }
 
-  // Eliminar la noticia de la lista
-  listaNews.splice(newsIndex, 1);
+  try {
+    await prisma.noticia.delete({
+      where: { id: newsId },
+    });
 
-  return res.status(200).json({ message: "Noticia eliminada con éxito" });
+    return res.status(200).json({ message: "Noticia eliminada con éxito" });
+  } catch (error) {
+    console.error("Error al eliminar la noticia:", error);
+    return res.status(500).json({ message: "Error al eliminar la noticia" });
+  }
 });
+
 
 
 
