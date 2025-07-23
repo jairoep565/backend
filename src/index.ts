@@ -282,13 +282,139 @@ app.post('/api/verify-code', (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Código inválido' });
   }
 });
-
 //-------------------------------------------- JUEGOS --------------------------------------------//
 
-// Obtener todas las noticias
+// Obtener todos los juegos
+app.get('/api/games', (req: Request, res: Response) => {
+  // Devolver la lista de juegos
+  return res.status(200).json(listaGames);
+});
+
+// Obtener un juego por ID
+app.get('/api/game/:id', (req: Request, res: Response) => {
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
+
+  // Buscar el juego en la lista
+  const game = listaGames.find(game => game.id === gameId);
+
+  if (!game) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  return res.status(200).json(game); // Devuelve el juego encontrado
+});
+
+
+app.post('/api/admin/games', (req: Request, res: Response) => {
+  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
+
+  // Verificar si el juego ya existe por título
+  const existingGame = listaGames.find(game => game.title === title);
+  if (existingGame) {
+    return res.status(400).json({ message: "El juego ya existe en el catálogo" });
+  }
+
+  // Generar un ID único para el nuevo juego, basado en la longitud de la lista
+  const newId = listaGames.length > 0 ? listaGames.length + 1 : 1;
+
+  // Crear el nuevo juego
+  const newGame: Game = {
+    id: newId, // ID generado
+    title,
+    description,
+    price,
+    category,
+    platform,
+    releaseDate,
+    onSale,
+    images,
+  };
+
+  listaGames.push(newGame); // Guardar el juego en la lista
+
+  return res.status(201).json({
+    message: 'Juego agregado con éxito',
+    game: newGame,
+  });
+});
+
+
+
+// Editar un juego
+app.put('/api/admin/games/:id', (req: Request, res: Response) => {
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
+  const { title, description, price, category, platform, releaseDate, onSale, images } = req.body;
+
+  // Buscar el juego a editar
+  const game = listaGames.find(game => game.id === gameId);
+
+  if (!game) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  // Actualizar los datos del juego
+  game.title = title || game.title;
+  game.description = description || game.description;
+  game.price = price || game.price;
+  game.category = category || game.category;
+  game.platform = platform || game.platform;
+  game.releaseDate = releaseDate || game.releaseDate;
+  game.onSale = onSale !== undefined ? onSale : game.onSale;
+  game.images = images || game.images;
+
+  return res.status(200).json({
+    message: "Juego actualizado con éxito",
+    game,
+  });
+});
+
+// Eliminar un juego
+app.delete('/api/admin/games/:id', (req: Request, res: Response) => {
+  const gameId = parseInt(req.params.id, 10); // Convertir el ID a número
+
+  // Buscar el índice del juego en la lista
+  const gameIndex = listaGames.findIndex(game => game.id === gameId);
+
+  if (gameIndex === -1) {
+    return res.status(404).json({ message: "Juego no encontrado" });
+  }
+
+  // Eliminar el juego
+  listaGames.splice(gameIndex, 1); // Eliminar el juego de la lista
+
+  return res.status(200).json({ message: "Juego eliminado con éxito" });
+});
+
+// Endpoint para filtrar juegos
+app.get('/api/admin/games/filter', (req: Request, res: Response) => {
+  const { categoria, precioMin, precioMax } = req.query;
+  let filteredGames = listaGames;
+
+  // Filtrar por categoría
+  if (categoria && typeof categoria === 'string') {
+    filteredGames = filteredGames.filter(game => game.category === categoria);
+  }
+
+  // Filtrar por precio
+  if (precioMin && precioMax) {
+    const minPrice = parseFloat(precioMin as string);
+    const maxPrice = parseFloat(precioMax as string);
+    filteredGames = filteredGames.filter(game => game.price >= minPrice && game.price <= maxPrice);
+  }
+
+  return res.status(200).json(filteredGames);
+});
+
+//-------------------------------------------- NOTICIAS --------------------------------------------//
+app.get('/api/news/demo', (req, res) => {
+  res.json(listaNews); // Envía el arreglo al frontend
+});
+
 app.get('/api/admin/news', async (req: Request, res: Response) => {
   try {
-    const newsList = await prisma.noticia.findMany();
+    const newsList = await prisma.noticia.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
     return res.status(200).json(newsList);
   } catch (error) {
     console.error("Error al obtener noticias:", error);
@@ -320,6 +446,7 @@ app.get('/api/admin/news/:id', async (req: Request, res: Response) => {
   }
 });
 
+
 // Crear noticia
 app.post('/api/admin/news', async (req: Request, res: Response) => {
   const { title, content, image } = req.body;
@@ -341,8 +468,6 @@ app.post('/api/admin/news', async (req: Request, res: Response) => {
       data: {
         title: title.trim(),
         content,
-        fecha: new Date().toISOString(),
-        estado: 'activo',
         image,
       },
     });
@@ -353,6 +478,7 @@ app.post('/api/admin/news', async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error al agregar noticia" });
   }
 });
+
 
 // Actualizar noticia
 app.put('/api/admin/news/:id', async (req: Request, res: Response) => {
@@ -366,7 +492,6 @@ app.put('/api/admin/news/:id', async (req: Request, res: Response) => {
         title,
         content,
         image,
-        updatedAt: new Date(),
       },
     });
 
@@ -398,9 +523,7 @@ app.delete('/api/admin/news/:id', async (req: Request, res: Response) => {
 });
 
 
-
-
-//--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
+/*--------------------------------------------- CARRITO DE COMPRAS --------------------------------------------//
 
 // Obtener carrito de compras de un usuario
 app.get('/api/cart/:userId', (req: Request, res: Response) => {

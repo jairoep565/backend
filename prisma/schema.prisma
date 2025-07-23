@@ -50,11 +50,13 @@ model Review {
 }
 
 model Noticia {
-  id      Int      @id @default(autoincrement())  
-  title   String   @unique
-  content String
-  fecha   DateTime 
-  estado  String 
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  image     String
 }
+
 
 
